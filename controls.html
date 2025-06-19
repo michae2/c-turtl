@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sea Turtles</title>
+  <style type="text/css">
+    body {
+      margin: min(2vw, 2vh);
+      padding: 0;
+      font-family: serif;
+    }
+    article {
+      float: left;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      margin: 0;
+      padding: 1vh;
+      font-size: 4vh;
+      text-align: center;
+    }
+    canvas {
+      margin: 0;
+      padding: 0;  
+      width: min(96vw, 90vh);
+    }
+    form {
+      margin: 0;
+      padding: 0;  
+    }
+    fieldset {
+      display: inline;
+      vertical-align: top;
+      min-width: 12em;
+      margin: min(2vw, 2vh) 0 0 min(2vw, 2vh);
+      padding: 0 1em;
+      border: 1px solid black;
+    }
+    legend {
+      margin: auto;
+      font-style: italic;
+    }
+    p {
+      margin-top: 0.5em;
+    }
+    output {
+      float: right;  
+      font-family: monospace;
+    }
+    input {
+      display: block;
+    }
+    #pause {
+      display: inline;
+    }
+    textarea {
+      display: block;
+    }
+    button {
+      font-family: serif;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  <article>
+    <h1>Sea Turtles</h1>
+    <canvas id="ocean" width="512" height="512"></canvas>
+  </article>
+  <form id="controls">
+    <fieldset id="playback-controls">
+      <legend>Playback</legend>
+      <p>
+        <label for="steps">Playback Steps</label>
+        <output id="steps" name="steps">0000000</output>
+      </p>
+      <p>
+        <label for="fps">Playback FPS</label>
+        <output id="fps" name="fps">0000</output>
+      </p>
+      <p>
+        <label for="speed-output">Speed</label>
+        <output id="speed-output" name="speed-output">1x</output>
+        <label for="speed" style="display: none;">Speed</label>
+        <input id="speed" name="speed" type="range" min="-2" max="2" list="speed-marks" />
+        <datalist id="speed-marks">
+          <option value="-2" label="1/4x"></option>
+          <option value="-1" label="1/2x"></option>
+          <option value="0" label="1x"></option>
+          <option value="1" label="2x"></option>
+          <option value="2" label="4x"></option>
+        </datalist>
+      </p>
+      <p>
+        <label for="pause">Pause</label>
+        <input id="pause" name="pause" type="checkbox" />
+      </p>
+      <p>
+        <button id="restart">Restart</button>
+      </p>
+    </fieldset>
+    <fieldset id="ocean-controls">
+      <legend>Ocean</legend>
+      <p>
+        <label for="ocean-visited">Ocean Visited</label>
+        <output id="ocean-visited" name="ocean-visited">000%</output>
+      </p>
+      <p>
+        <label for="size-output">Ocean Size</label>
+        <output id="size-output" name="size-output">512x512</output>
+        <label for="size" style="display: none;">Ocean Size</label>
+        <input id="size" name="size" type="range" min="7", max="11", list="size-marks" />
+        <datalist id="size-marks">
+          <option value="7" label="128x128"></option>
+          <option value="8" label="256x256"></option>
+          <option value="9" label="512x512"></option>
+          <option value="10" label="1024x1024"></option>
+          <option value="11" label="2048x2048"></option>
+        </datalist>
+      </p>
+    </fieldset>
+    <fieldset id="turtle-controls">
+      <legend>Turtles</legend>
+      <p>
+        <label for="turtles">Turtles</label>
+        <output id="turtles" name="turtles">0000000</output>
+      </p>
+      <p>
+        <label for="peak-turtles">Peak Turtles</label>
+        <output id="peak-turtles" name="peak-turtles">0000000</output>
+      </p>
+      <p>
+        <label for="total-turtles">Total Turtles</label>
+        <output id="total-turtles" name="total-turtles">0000000</output>
+      </p>
+      <p>
+        <label for="generations">Generations</label>
+        <output id="generations" name="generations">0000000</output>
+      </p>
+      <p>
+        <label for="dna">Turtle DNA</label>
+        <textarea id="dna" name="dna" rows="5" spellcheck="false" autocorrect="off" autocomplete="off" maxlength="1024"></textarea>
+      </p>
+      <hr />
+      <p>
+        <dl>
+          <dt>F</dt>
+          <dd>swim <b>forward</b></dd>
+          <dt>L</dt>
+          <dd>rotate <b>left</b></dd>
+          <dt>R</dt>
+          <dd>rotate <b>right</b></dd>
+          <dt>P</dt>
+          <dd><b>poop</b></dd>
+          <dt>B</dt>
+          <dd>spawn a <b>baby</b></dd>
+        </dl>
+      </p>
+    </fieldset>
+  </form>
+  <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function () {
+      const ocean = document.getElementById("ocean");
+      const ctx = ocean.getContext("2d");
+      const gradient = ctx.createLinearGradient(0, 0, 0, ocean.height);
+      gradient.addColorStop(0, "#177dcc");
+      gradient.addColorStop(1, "#184275");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, ocean.width, ocean.height);
+    });
+  </script>
+</body>
+</html>
