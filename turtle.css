@@ -1,0 +1,74 @@
+body {
+  margin: min(2vw, 2vh);
+  padding: 0;
+  font-family: serif;
+}
+
+/* Float the ocean left so that fieldsets wrap around. */
+main {
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  margin: 0;
+  padding: 1vh;
+  font-size: 4vh;
+  text-align: center;
+}
+
+/* The ocean is square, and tries to fill most of the smaller viewport
+ * dimension. */
+canvas {
+  margin: 0;
+  padding: 0;
+  width: min(96vw, 90vh);
+  background-color: gray;
+}
+
+form {
+  margin: 0;
+  padding: 0;
+}
+
+/* Fieldsets are inline to allow them to be in a row beneath the ocean. */
+fieldset {
+  display: inline;
+  vertical-align: top;
+  min-width: 12em;
+  margin: min(2vw, 2vh) 0 0 min(2vw, 2vh);
+  padding: 0 1em;
+  border: 1px solid black;
+}
+
+legend {
+  margin: auto;
+  font-style: italic;
+}
+
+p {
+  margin-top: 0.5em;
+}
+
+output {
+  float: right;
+  font-family: monospace;
+}
+
+input {
+  display: block;
+}
+
+#pause {
+  display: inline;
+}
+
+textarea {
+  display: block;
+}
+
+button {
+  font-family: serif;
+  font-size: 1em;
+}
