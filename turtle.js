@@ -261,6 +261,15 @@ document.addEventListener("DOMContentLoaded", function () {
   dnaTextArea.textContent = dna;
   const sim = new Simulation(dna, ocean.width, ocean.height);
 
+  playbackSpeedInput.addEventListener("change", () => {
+    const speed = parseInt(playbackSpeedInput.value);
+    if (speed < 0) {
+      playbackSpeedOutput.textContent = "1/" + 2 ** -speed + "x";
+    } else {
+      playbackSpeedOutput.textContent = 2 ** speed + "x";
+    }
+  });
+
   function updateUI() {
     playbackStepsOutput.textContent = sim.steps.toString().padStart(7, '0');
     turtlesOutput.textContent = sim.turtles.toString().padStart(7, '0');
@@ -269,40 +278,43 @@ document.addEventListener("DOMContentLoaded", function () {
     generationsOutput.textContent = sim.generations.toString().padStart(7, '0');
   }
 
-  function animate(time, prevTime) {
+  let budget = 64;
+  function animate(curTime, prevTime) {
     if (sim.turtles < 1 || playbackPauseInput.checked) {
       updateUI();
       return;
     }
+    const elapsed = curTime - prevTime;
     const speed = parseInt(playbackSpeedInput.value);
     const msPerStep = 2 ** -speed * 8;
-    // Bound the amount of work we do in case there was a long delay between
-    // callbacks.
-    if (time - prevTime > 64) {
-      prevTime = time - 64;
+    if (msPerStep > elapsed) {
+      requestAnimationFrame(time => animate(time, prevTime));
+      return;
     }
-    // This isn't working quite right...
-    const budget = time - prevTime;
-    const start = performance.now();
-    while (prevTime + msPerStep < time) {
+    if (budget > elapsed - 2) {
+      budget = elapsed - 2;
+    }
+    while (prevTime + msPerStep < curTime) {
       sim.step();
       sim.draw(ctx);
       prevTime += msPerStep;
-      if (performance.now() - start > budget) {
-        prevTime = time;
+        // Bound the amount of work we do in case there was a long delay between
+        // callbacks or we spent too long updating the simulation.
+      if (performance.now() - curTime > budget) {
+        break;
       }
     }
     updateUI();
-    requestAnimationFrame(time => animate(time, prevTime));
+    requestAnimationFrame(time => animate(time, curTime));
   }
 
   playbackPauseInput.addEventListener("change", () => {
     if (!playbackPauseInput.checked) {
-      requestAnimationFrame(time => animate(time, performance.now()));
+      requestAnimationFrame(time => animate(time, time - budget));
     }
   });
 
   sim.draw(ctx);
   updateUI();
-  requestAnimationFrame(time => animate(time, performance.now()));
+  requestAnimationFrame(time => animate(time, time - budget));
 });
