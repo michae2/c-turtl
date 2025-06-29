@@ -164,10 +164,10 @@ class Simulation {
   step() {
     // Logically move all generations forward to the next DNA command, including
     // the baby generation, by moving the baby generation position backward to
-    // point at the oldest generation.
+    // point at the oldest generation, which is now reincarnated.
     this.babyG = mod(this.babyG - 1, this.turtleGens.length);
     const babyGen = this.turtleGens[this.babyG];
-    // Reset the new baby generation.
+    // Reset the newly reincarnated baby generation.
     this.turtles -= babyGen.length;
     babyGen.length = 0;
     // Perform the next command for all generations.
@@ -185,15 +185,15 @@ class Simulation {
     }
     this.totalTurtles += babyGen.length;
     for (let i = 0; i < babyGen.length; i++) {
-      const b = babyGen[i];
-      if (b.gen > this.generations) {
-        this.generations = b.gen;
+      const gen = babyGen[i].gen;
+      if (gen > this.generations) {
+        this.generations = gen;
       }
     }
   }
 
   draw(ctx) {
-    // Draw baby generation.
+    // Draw starting locations of baby generation.
     drawGen(ctx, "", this.turtleGens[this.babyG]);
     // Draw each generation after they've finished their command.
     for (let i = 0; i < this.dna.length; i++) {
@@ -203,6 +203,8 @@ class Simulation {
       drawGen(ctx, cmd, turtleGen);
     }
   }
+  // TODO: resize
+  // TODO: edit genome
 }
 
 // todo:
@@ -228,9 +230,26 @@ class Simulation {
 // if turtles walk through poop, should something happen? track depth of poop?
 //
 // javascript loading bar? message when js disabled?
+//
+// distinguish total generations from current generations
 
 document.addEventListener("DOMContentLoaded", function () {
   const ocean = document.getElementById("ocean");
+  const playbackStepsOutput = document.getElementById("steps");
+  const playbackFPSOutput = document.getElementById("fps");
+  const playbackSpeedOutput = document.getElementById("speed-output");
+  const playbackSpeedInput = document.getElementById("speed");
+  const playbackPauseInput = document.getElementById("pause");
+  const restartButton = document.getElementById("restart");
+  const oceanVisitedOutput = document.getElementById("ocean-visited");
+  const oceanSizeOutput = document.getElementById("size-output");
+  const oceanSizeInput = document.getElementById("size");
+  const turtlesOutput = document.getElementById("turtles");
+  const peakTurtlesOutput = document.getElementById("peak-turtles");
+  const totalTurtlesOutput = document.getElementById("total-turtles");
+  const generationsOutput = document.getElementById("generations");
+  const dnaTextArea = document.getElementById("dna");
+
   const ctx = ocean.getContext("2d");
   const gradient = ctx.createLinearGradient(0, 0, 0, ocean.height);
   gradient.addColorStop(0, "#177dcc");
@@ -238,41 +257,52 @@ document.addEventListener("DOMContentLoaded", function () {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, ocean.width, ocean.height);
 
-  const playbackStepsOutput = document.getElementById("steps");
-  const playbackFPSOutput = document.getElementById("fps");
-  const playbackSpeedOutput = document.getElementById("speed-output");
-  const oceanVisitedOutput = document.getElementById("ocean-visited");
-  const oceanSizeOutput = document.getElementById("size-output");
-  const turtlesOutput = document.getElementById("turtles");
-  const peakTurtlesOutput = document.getElementById("peak-turtles");
-  const totalTurtlesOutput = document.getElementById("total-turtles");
-  const generationsOutput = document.getElementById("generations");
-  const dnaTextArea = document.getElementById("dna");
-
-  const speed = 1;
   const dna = "FFFFFFFFFFFFFFFFFFFFFFPFFFFFFFFRBFFFB";
   dnaTextArea.textContent = dna;
   const sim = new Simulation(dna, ocean.width, ocean.height);
 
-  function update() {
-    sim.step();
-  }
-  function draw() {
-    sim.draw(ctx);
+  function updateUI() {
     playbackStepsOutput.textContent = sim.steps.toString().padStart(7, '0');
     turtlesOutput.textContent = sim.turtles.toString().padStart(7, '0');
     peakTurtlesOutput.textContent = sim.peakTurtles.toString().padStart(7, '0');
     totalTurtlesOutput.textContent = sim.totalTurtles.toString().padStart(7, '0');
     generationsOutput.textContent = sim.generations.toString().padStart(7, '0');
   }
-  function animate() {
-    draw();
-    update();
-    if (sim.turtles > 0) {
-      requestAnimationFrame(animate);
-    } else {
-      draw();
+
+  function animate(time, prevTime) {
+    if (sim.turtles < 1 || playbackPauseInput.checked) {
+      updateUI();
+      return;
     }
+    const speed = parseInt(playbackSpeedInput.value);
+    const msPerStep = 2 ** -speed * 8;
+    // Bound the amount of work we do in case there was a long delay between
+    // callbacks.
+    if (time - prevTime > 64) {
+      prevTime = time - 64;
+    }
+    // This isn't working quite right...
+    const budget = time - prevTime;
+    const start = performance.now();
+    while (prevTime + msPerStep < time) {
+      sim.step();
+      sim.draw(ctx);
+      prevTime += msPerStep;
+      if (performance.now() - start > budget) {
+        prevTime = time;
+      }
+    }
+    updateUI();
+    requestAnimationFrame(time => animate(time, prevTime));
   }
-  animate();
+
+  playbackPauseInput.addEventListener("change", () => {
+    if (!playbackPauseInput.checked) {
+      requestAnimationFrame(time => animate(time, performance.now()));
+    }
+  });
+
+  sim.draw(ctx);
+  updateUI();
+  requestAnimationFrame(time => animate(time, performance.now()));
 });
