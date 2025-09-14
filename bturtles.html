@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>B Turtles</title>
+  <link rel="stylesheet" href="bturtles.css">
+</head>
+<body>
+  <main>
+    <div id="foo">
+      <canvas id="ocean" width="512" height="512"></canvas>
+    </div>
+      <div class="bigtile">
+        <table id="counters">
+          <tbody>
+            <tr>
+              <th>Turtles</th>
+              <td>0000000</td>
+            </tr>
+            <tr>
+              <th>Total</th>
+              <td>0000000</td>
+            </tr>
+            <tr>
+              <th>Steps</th>
+              <td>0000000</td>
+            </tr>
+            <tr>
+              <th>Visited</th>
+              <td>0000000</td>
+            </tr>
+            <tr>
+              <th>Area</th>
+              <td>0000000</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="bigtile">
+        <textarea id="dna" name="dna" rows="5" spellcheck="false" autocorrect="off" autocomplete="off" maxlength="1024"></textarea>
+      </div>
+      <!-- <button id="restart" type="button" title="Restart">&#x23EE;&#xFE0E;</button> -->
+      <button id="pause" type="button" title="Pause">&#x23EF;&#xFE0E;</button>
+      <button id="faster" type="button" title="Faster">&#x23F6;&#xFE0E;</button>
+      <button id="slower" type="button" title="Slower">&#x23F7;&#xFE0E;</button>
+      <button id="forward" type="button" title="Forward">F</button>
+      <button id="left" type="button" title="Rotate left">L</button>
+      <button id="right" type="button" title="Rotate right">R</button>
+      <button id="poop" type="button" title="Poop">P</button>
+      <button id="baby" type="button" title="Have a baby">B</button>
+      <button id="del" type="button" title="Delete">&#x2421;</button>
+      <!-- <button id="bigger" type="button" title="Make area bigger">&#x2191;</button> -->
+      <!-- <button id="smaller" type="button" title="Make area smaller">&#x2193;</button> -->
+  </main>
+  <script src="bturtles.js" defer></script>
+</body>
+</html>
