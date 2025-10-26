@@ -1,0 +1,75 @@
+body {
+    margin: 1vmin;
+}
+
+main {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 10vmin);
+    grid-auto-rows: 10vmin;
+    gap: 1vmin;
+    max-width: calc(12 * 10vmin + 11 * 1vmin);
+}
+
+h1 {
+    position: absolute;
+    margin: 0px;
+}
+
+section {
+    grid-column: span 3;
+    grid-row: span 3;
+    background-color: yellow;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 1vmin;
+    justify-content: center;
+    align-content: center;
+}
+
+#section-big {
+    grid-column: span 9;
+    grid-row: span 9;
+    background-color: pink;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 128px);
+    grid-template-rows: repeat(auto-fill, 128px);
+    overflow: auto;
+}
+
+canvas {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    width: 100%;
+    height: 100%;
+    background-color: red;
+}
+
+h2 {
+    grid-column: span 4;
+    grid-row: span 1;
+    margin: 0px;
+    background: green;
+    overflow: hidden;
+}
+
+pre {
+    background-color: blue;
+    grid-column: span 4;
+    grid-row: span 3;
+    overflow: auto;
+    text-align: center;
+    height: 100%;
+    margin: 0px;
+}
+
+textarea {
+    grid-column: span 4;
+    grid-row: span 3;
+    resize: none;
+}
+
+button {
+    overflow: hidden;
+    font-size: large;
+}

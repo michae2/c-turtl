@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>C Turtles</title>
+  <link rel="stylesheet" href="cturtles.css">
+</head>
+<body>
+  <main>
+    <h1>C Turtles</h1>
+    <section id="section-big">
+      <canvas aria-label="Simulation of turtles moving around"></canvas>
+    </section>
+    <section>
+      <h2>Statistics</h2>
+      <pre>
+Turtles        <span class="stat" id="">      0</span>
+Peak turtles   <span class="stat" id="">      0</span>
+Total turtles  <span class="stat" id="">      0</span>
+Generations    <span class="stat" id="">      0</span>
+Playback steps <span class="stat" id="">      0</span>
+Playback FPS   <span class="stat" id="">    0.0</span>
+Spots visited  <span class="stat" id="">      0</span>
+Total spots    <span class="stat" id="">      0</span>
+Area           <span class="stat" id="">512x512</span>
+</pre>
+    </section>
+    <section>
+      <h2>DNA</h2>
+      <textarea id="dna" title="Turtle DNA" spellcheck="false" autocorrect="off" autocomplete="off" maxlength="1024">FFFF</textarea>
+    </section>
+    <section>
+      <h2>Controls</h2>
+      <button id="restart" type="button" title="Restart" aria-label="Restart">&#x23EE;&#xFE0E;</button>
+      <button id="pause" type="button" title="Pause" aria-label="Pause">&#x23EF;&#xFE0E;</button>
+      <button id="faster" type="button" title="Faster" aria-label="Faster">&#x23F6;&#xFE0E;</button>
+      <button id="slower" type="button" title="Slower" aria-label="Slower">&#x23F7;&#xFE0E;</button>
+      <button id="forward" type="button" title="Forward" aria-label="F">F</button>
+      <button id="left" type="button" title="Turn left" aria-label="L">L</button>
+      <button id="right" type="button" title="Turn right" aria-label="R">R</button>
+      <button id="poop" type="button" title="Poop" aria-label="P">P</button>
+      <button id="baby" type="button" title="Baby" aria-label="B">B</button>
+      <button id="del" type="button" title="Delete" aria-label="Delete">&#x2421;</button>
+      <button id="bigger" type="button" title="Zoom in" aria-label="Zoom in">&#x25A1;</button>
+      <button id="smaller" type="button" title="Zoom out" aria-label="Zoom out">&#x25AB;</button>
+      <!-- rewind? -->
+    </section>
+  </main>
+  <script src="cturtles.js" defer></script>
+</body>
+</html>
