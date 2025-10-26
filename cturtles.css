@@ -13,12 +13,13 @@ main {
 h1 {
     position: absolute;
     margin: 0px;
+    font-size: 5vmin;
+    padding: 1vmin;
 }
 
 section {
     grid-column: span 3;
     grid-row: span 3;
-    background-color: yellow;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(4, 1fr);
@@ -30,11 +31,11 @@ section {
 #section-big {
     grid-column: span 9;
     grid-row: span 9;
-    background-color: pink;
     display: grid;
     grid-template-columns: repeat(auto-fill, 128px);
     grid-template-rows: repeat(auto-fill, 128px);
     overflow: auto;
+    background: lightgray;
 }
 
 canvas {
@@ -42,34 +43,46 @@ canvas {
     grid-row: 1 / -1;
     width: 100%;
     height: 100%;
-    background-color: red;
 }
 
 h2 {
     grid-column: span 4;
     grid-row: span 1;
     margin: 0px;
-    background: green;
     overflow: hidden;
+    font-size: 5vmin;
+    background: gray;
+    padding: 1vmin;
 }
 
-pre {
-    background-color: blue;
-    grid-column: span 4;
-    grid-row: span 3;
+label {
+    grid-column: span 2;
     overflow: auto;
-    text-align: center;
-    height: 100%;
-    margin: 0px;
+    text-align: right;
+    font-size: 3vmin;
+    font-family: monospace;
+    padding: 1vmin;
+}
+
+output {
+    grid-column: span 2;
+    overflow: auto;
+    text-align: right;
+    font-size: 3vmin;
+    font-family: monospace;
+    padding: 1vmin;
+    background: black;
+    color: white
 }
 
 textarea {
     grid-column: span 4;
     grid-row: span 3;
     resize: none;
+    font-size: 2vmin;
 }
 
 button {
     overflow: hidden;
-    font-size: large;
+    font-size: 3vmin;
 }
