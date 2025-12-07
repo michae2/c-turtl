@@ -16,30 +16,62 @@
       <h2>STATS</h2>
       <label for="turtles">Turtles</label>
       <output id="turtles" name="turtles" title="Turtles" aria-live="off">0</output>
-      <label for="actions">Actions</label>
-      <output id="actions" name="actions" title="Actions" aria-live="off">0</output>
-      <label for="visited">Visited</label>
-      <output id="visited" name="visited" title="Spots visited" aria-live="off">0</output>
+      <label for="steps">Steps</label>
+      <output id="steps" name="steps" title="Steps" aria-live="off">0</output>
+      <label for="births">Births</label>
+      <output id="births" name="births" title="Births" aria-live="off">0</output>
+      <!--<label for="fps">FPS</label>
+      <output id="fps" name="fps" title="Frames per second" aria-live="off">0</output>-->
     </section>
     <section>
       <h2>DNA</h2>
-      <textarea id="dna" title="Turtle DNA" spellcheck="false" autocorrect="off" autocomplete="off" maxlength="1024">FFFFFFFFFFPFFFFFFFFRBFFFB</textarea>
+      <textarea id="dna" title="Turtle DNA" spellcheck="false" autocorrect="off" autocomplete="off" maxlength="1024"></textarea>
     </section>
     <section>
-      <h2>CTRL</h2>
+      <h2 id="ctrl">CTRL</h2>
+      <label for="speed" style="display: none;">Speed</label>
+      <input id="speed" name="speed" type="range" min="-4" max="3" value="0" list="speed-marks">
+      <datalist id="speed-marks">
+        <option value="-4" label="0"></option>
+        <option value="-3" label="&#x215B"></option>
+        <option value="-2" label="&#x00BC"></option>
+        <option value="-1" label="&#x00BD"></option>
+        <option value="0" label="1"></option>
+        <option value="1" label="2"></option>
+        <option value="2" label="4"></option>
+        <option value="3" label="8"></option>
+      </datalist>
+      <!--
+      <label for="scale" style="display: none;">Scale</label>
+      <input id="scale" name="scale" type="range" min="2", max="10", value="6" list="scale-marks" />
+      <datalist id="scale-marks" style="display: none;">
+        <option value="2" label="2"></option>
+        <option value="3" label="3"></option>
+        <option value="4" label="4"></option>
+        <option value="5" label="5"></option>
+        <option value="6" label="6"></option>
+        <option value="7" label="7"></option>
+        <option value="8" label="8"></option>
+        <option value="9" label="9"></option>
+        <option value="10" label="10"></option>
+      </datalist>
+      -->
       <button id="restart" type="button" title="Restart" aria-label="Restart">&#x23EE;&#xFE0E;</button>
       <button id="pause" type="button" title="Pause" aria-label="Pause">&#x23F8;&#xFE0E;</button>
-      <button id="faster" type="button" title="Faster" aria-label="Faster">&#x23F6;&#xFE0E;</button>
-      <button id="slower" type="button" title="Slower" aria-label="Slower">&#x23F7;&#xFE0E;</button>
-      <button id="baby" type="button" title="Baby" aria-label="B">B</button>
-      <button id="forward" type="button" title="Forward" aria-label="F">F</button>
-      <button id="left" type="button" title="Turn left" aria-label="L">L</button>
-      <button id="right" type="button" title="Turn right" aria-label="R">R</button>
-      <button id="poop" type="button" title="Poop" aria-label="P">P</button>
-      <!--<button id="delete" type="button" title="Delete" aria-label="Delete">&#x2421;</button>-->
-      <button id="clean" type="button" title="Clean" aria-label="C">C</button>
+      <button id="speed-modal" type="button" title="Speed" aria-label="">1&#x00D7</button>
+      <!--<button id="scale-modal" type="button" title="Scale" aria-label="Scale">&#x25A1;&#x2076;</button>-->
+      <!--<button id="faster" type="button" title="Faster" aria-label="Faster">&#x23F6;&#xFE0E;</button>-->
+      <!--<button id="slower" type="button" title="Slower" aria-label="Slower">&#x23F7;&#xFE0E;</button>-->
+      <button id="delete" type="button" title="Delete" aria-label="Delete">&#x2421;</button>
+      <button id="forward" type="button" title="Forward" aria-label="F" style="color: #66cc66;">F</button>
+      <button id="left" type="button" title="Turn left" aria-label="L" style="color: #66cc66;">L</button>
+      <button id="right" type="button" title="Turn right" aria-label="R" style="color: #66cc66;">R</button>
+      <button id="baby" type="button" title="Baby" aria-label="B" style="color: #9966cc;">B</button>
+      <button id="poop" type="button" title="Poop" aria-label="P" style="color: #cc9966;">P</button>
+      <button id="clean" type="button" title="Clean" aria-label="C" style="color: #6699cc;">C</button>
       <button id="bigger" type="button" title="Zoom in" aria-label="Zoom in">&#x25A1;</button>
       <button id="smaller" type="button" title="Zoom out" aria-label="Zoom out">&#x25AB;</button>
+      <!--<button id="fullscreen" type="button" title="Full Screen" aria-label="Full Screen">&#x26F6;</button>-->
     </section>
   </main>
   <script src="cturtles.js" defer></script>

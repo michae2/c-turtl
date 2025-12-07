@@ -1,89 +1,102 @@
 body {
-    margin: 1vmin;
+  margin: 1vmin;
 }
 
 main {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, 10vmin);
-    grid-auto-rows: 10vmin;
-    gap: 1vmin;
-    max-width: calc(12 * 10vmin + 11 * 1vmin);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 10vmin);
+  grid-auto-rows: 10vmin;
+  gap: 1vmin;
+  max-width: calc(12 * 10vmin + 11 * 1vmin);
 }
 
 h1 {
-    position: absolute;
-    margin: 0px;
-    font-size: 5vmin;
-    padding: 1vmin;
+  position: absolute;
+  margin: 0px;
+  font-size: 5vmin;
+  padding: 1vmin;
 }
 
 section {
-    grid-column: span 3;
-    grid-row: span 3;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    gap: 1vmin;
-    justify-content: center;
-    align-content: center;
+  grid-column: span 3;
+  grid-row: span 3;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 1vmin;
+  justify-content: center;
+  align-content: center;
 }
 
 #section-big {
-    grid-column: span 9;
-    grid-row: span 9;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, 128px);
-    grid-template-rows: repeat(auto-fill, 128px);
-    overflow: auto;
-    background: lightgray;
+  grid-column: span 9;
+  grid-row: span 9;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 128px);
+  grid-template-rows: repeat(auto-fill, 128px);
+  overflow: auto;
+  background: lightgray;
 }
 
 canvas {
-    grid-column: 1 / -1;
-    grid-row: 1 / -1;
-    width: 100%;
-    height: 100%;
-    image-rendering: pixelated;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  image-rendering: pixelated;
 }
 
 h2 {
-    grid-column: span 4;
-    grid-row: span 1;
-    margin: 0px;
-    overflow: hidden;
-    font-size: 5vmin;
-    background: gray;
-    padding: 1vmin;
+  grid-column: span 4;
+  grid-row: span 1;
+  margin: 0px;
+  overflow: hidden;
+  font-size: 5vmin;
+  background: gray;
+  padding: 1vmin;
 }
 
 label {
-    grid-column: span 2;
-    overflow: auto;
-    text-align: right;
-    font-size: 3vmin;
-    font-family: monospace;
-    padding: 1vmin;
+  grid-column: span 2;
+  overflow: auto;
+  text-align: right;
+  font-size: 3vmin;
+  font-family: monospace;
+  padding: 1vmin;
 }
 
 output {
-    grid-column: span 2;
-    overflow: auto;
-    text-align: right;
-    font-size: 3vmin;
-    font-family: monospace;
-    padding: 1vmin;
-    background: black;
-    color: white
+  grid-column: span 2;
+  overflow: auto;
+  text-align: right;
+  font-size: 3vmin;
+  font-family: monospace;
+  padding: 1vmin;
+  background: black;
+  color: white
 }
 
 textarea {
-    grid-column: span 4;
-    grid-row: span 3;
-    resize: none;
-    font-size: 2vmin;
+  grid-column: span 4;
+  grid-row: span 3;
+  resize: none;
+  font-size: 2vmin;
 }
 
 button {
-    overflow: hidden;
-    font-size: 3vmin;
+  overflow: hidden;
+  font-size: 3vmin;
+}
+
+#speed {
+  grid-column: span 4;
+  grid-row: span 1;
+  display: none;
+}
+
+#scale {
+  grid-column: span 4;
+  grid-row: span 1;
+  display: none;
 }

@@ -1,5 +1,16 @@
 "use strict";
 
+// TODO:
+//   - save textarea edits across reloads?
+//   - update URL to save links
+//   - fix H1 title
+//   - max size for controls? min size for controls?
+//   - instructions
+//   - fix on safari
+//   - clean up main
+//   - when typing lowercase into textarea cursor jumps to end
+//   - speed slider not in sync sometimes?
+
 // TurtleGeneration represents one cohort of sea turtles that are born during
 // the same step.  This cohort will never grow or shrink, and will always
 // execute the same DNA command at the same time, so we group them together for
@@ -30,9 +41,6 @@ class TurtleGeneration {
   }
 
   baby(babyGen, babySet, size) {
-    if (this.length > 0) {
-      //console.log("baby:", this.length);
-    }
     // If the baby generation doesn't have enough capacity, re-allocate to make
     // it big enough.
     if (babyGen.x.length - babyGen.length < this.length) {
@@ -73,7 +81,6 @@ class TurtleGeneration {
       const r = this.dx[i] + this.dy[i] * 3;
       const s = r + 3 + (r < 0);
       const babySetMask = 1 << s;
-      //console.log(s, babySet[j]);
       if ((babySet[j] & babySetMask) === 0) {
         babySet[j] |= babySetMask;
         babyGen.x[babyGen.length] = this.x[i];
@@ -83,15 +90,9 @@ class TurtleGeneration {
         babyGen.length++;
       }
     }
-    if (babyGen.length > 0) {
-      //console.log("added babies:", babyGen.length);
-    }
   }
 
   forward(sizeMask) {
-    if (this.length > 0) {
-      //console.log("forward:", this.length);
-    }
     // To go forward we simply add dx to x and dy to y.
     for (let i = 0; i < this.length; i++) {
       this.x[i] = (this.x[i] + this.dx[i]) & sizeMask;
@@ -166,11 +167,9 @@ class TurtleGeneration {
   }
 
   poop(poopBuffer, size) {
-    if (this.length > 0) {
-      //console.log("poop:", this.length);
-    }
     for (let i = 0; i < this.length; i++) {
       const j = this.x[i] + this.y[i] * size;
+      // Pooping makes the spot 20% darker.
       poopBuffer.data[j * 4 + 0] -= 0x33;
       poopBuffer.data[j * 4 + 1] -= 0x33;
       poopBuffer.data[j * 4 + 2] -= 0x33;
@@ -180,19 +179,57 @@ class TurtleGeneration {
   clean(poopBuffer, size) {
     for (let i = 0; i < this.length; i++) {
       const j = this.x[i] + this.y[i] * size;
-      poopBuffer.data[j * 4 + 0] += 0x33;
-      poopBuffer.data[j * 4 + 1] += 0x33;
-      poopBuffer.data[j * 4 + 2] += 0x33;
+      // Cleaning makes the spot 33% lighter, but with some variation in red and
+      // blue depending on direction to give a nice rainbow effect.
+      poopBuffer.data[j * 4 + 0] += 0x55 + 0x55 * this.dx[i];
+      poopBuffer.data[j * 4 + 1] += 0x55;
+      poopBuffer.data[j * 4 + 2] += 0x55 + 0x55 * this.dy[i];
     }
   }
 
-  draw(ctx) {
-    if (this.length > 0) {
-      //console.log("draw:", this.length);
-    }
-    ctx.fillStyle = "#0e8e81";
+  // Turtle colors are found in the 50%-saturation-60%-lightness color wheel:
+  // - FLR colors are hsl( 90, 50%, 60%), or #99cc66, close to YellowGreen,
+  //   all the way to hsl(150, 50%, 60%), or #66cc99, close to MediumAquaMarine
+  // - and C color is hsl(210, 50%, 60%), or #6699cc, close to CornflowerBlue
+  // - and B color is hsl(270, 50%, 60%), or #9966cc, close to MediumPurple
+  // - and P color is hsl( 30, 50%, 60%), or #cc9966, close to Peru
+  static #turtleStyles = {
+    F: [
+      "#99cc66", "#7fcc66", "#66cc66",
+      "#7fcc66", "#66cc66", "#66cc7f",
+      "#66cc66", "#66cc7f", "#66cc99"
+    ],
+    L: [
+      "#99cc66", "#7fcc66", "#66cc66",
+      "#7fcc66", "#66cc66", "#66cc7f",
+      "#66cc66", "#66cc7f", "#66cc99"
+    ],
+    R: [
+      "#99cc66", "#7fcc66", "#66cc66",
+      "#7fcc66", "#66cc66", "#66cc7f",
+      "#66cc66", "#66cc7f", "#66cc99"
+    ],
+    C: [
+      "#6699cc", "#6699cc", "#6699cc",
+      "#6699cc", "#6699cc", "#6699cc",
+      "#6699cc", "#6699cc", "#6699cc"
+    ],
+    B: [
+      "#9966cc", "#9966cc", "#9966cc",
+      "#9966cc", "#9966cc", "#9966cc",
+      "#9966cc", "#9966cc", "#9966cc"
+    ],
+    P: [
+      "#cc9966", "#cc9966", "#cc9966",
+      "#cc9966", "#cc9966", "#cc9966",
+      "#cc9966", "#cc9966", "#cc9966"
+    ],
+  };
+
+  draw(ctx, cmd) {
+    const fillStyle = TurtleGeneration.#turtleStyles[cmd];
     for (let i = 0; i < this.length; i++) {
-      //console.log("fillRect", this.x[i], this.y[i]);
+      ctx.fillStyle = fillStyle[(this.dx[i] + 1) + (this.dy[i] + 1) * 3];
       ctx.fillRect(this.x[i], this.y[i], 1, 1);
     }
   }
@@ -206,7 +243,7 @@ class Simulation {
     this.dna = dna;
     this.size = 1 << scale;
     this.turtleGens = new Array(this.dna.length + 1);
-    const defaultTurtleGenSize = Math.max(16, this.size >> 2);
+    const defaultTurtleGenSize = Math.max(16, this.size);
     for (let g = 0; g < this.turtleGens.length; g++) {
       this.turtleGens[g] = new TurtleGeneration(defaultTurtleGenSize);
     }
@@ -215,7 +252,7 @@ class Simulation {
     this.babySet = new Uint8Array(babySetLen);
     this.steps = 0;
     this.turtles = 0;
-    this.visited = 0;
+    this.births = 0;
 
     this.ctx = ctx;
     this.poopBuffer = this.ctx.createImageData(this.size, this.size);
@@ -224,7 +261,6 @@ class Simulation {
   }
 
   reset() {
-    //console.log("reset");
     for (let g = 0; g < this.turtleGens.length; g++) {
       this.turtleGens[g].reset();
     }
@@ -233,22 +269,21 @@ class Simulation {
     this.babySet.fill(0);
     this.steps = 0;
     this.turtles = 0;
-    this.visited = 0;
+    this.births = 0;
 
     // Add the first turtle in the middle facing east.
     const halfway = this.size >> 1;
     this.turtleGens[this.babyG].tryAppend(halfway, halfway, 1, 0);
     this.babySet[halfway + halfway * this.size] = 1 << 4;
     this.turtles++;
-    this.visited++;
+    this.births++;
 
     this.poopBuffer.data.fill(0xff);
   }
 
   resetDNA(dna) {
-    //console.log("resetDNA:", dna);
     this.dna = dna;
-    const defaultTurtleGenSize = Math.max(16, this.size >> 2);
+    const defaultTurtleGenSize = Math.max(16, this.size);
     while (this.turtleGens.length < this.dna.length + 1) {
       this.turtleGens.push(new TurtleGeneration(defaultTurtleGenSize));
     }
@@ -257,7 +292,6 @@ class Simulation {
   }
 
   resetScale(scale, ctx) {
-    //console.log("resetScale:", scale);
     this.size = 1 << scale;
     const babySetLen = 1 << scale << scale;
     if (this.babySet.length < babySetLen) {
@@ -277,7 +311,6 @@ class Simulation {
     if (this.babyG < 0) {
       this.babyG = this.turtleGens.length - 1;
     }
-    //console.log("babyG:", this.babyG);
     const babyGen = this.turtleGens[this.babyG];
     // Reset the newly-reincarnated baby generation.
     this.turtles -= babyGen.length;
@@ -285,10 +318,8 @@ class Simulation {
     // Perform the next DNA command for all turtle generations.
     for (let i = 0; i < this.dna.length; i++) {
       const g = (this.babyG + 1 + i) % this.turtleGens.length;
-      //console.log("DNA cmd:", i, this.dna[i], "on gen:", g);
       switch (this.dna[i]) {
       case 'B':
-        //console.log(this.babyG, babyGen);
         this.turtleGens[g].baby(babyGen, this.babySet, this.size);
         break;
       case 'F':
@@ -308,27 +339,26 @@ class Simulation {
         break;
       }
     }
-    if (babyGen.length > 0) {
-      //console.log("added total babies", babyGen.length);
-    }
     // Update stats.
     this.steps++;
     this.turtles += babyGen.length;
-    this.visited += babyGen.length;
+    this.births += babyGen.length;
   }
 
   draw() {
     // Start with the poop layer.
     this.ctx.putImageData(this.poopBuffer, 0, 0);
-    // Draw each turtle generation on top.
-    for (let g = 0; g < this.turtleGens.length; g++) {
-      this.turtleGens[g].draw(this.ctx);
+    // Draw each turtle generation on top, youngest to oldest.
+    this.turtleGens[this.babyG].draw(this.ctx, 'F');
+    for (let i = 0; i < this.dna.length; i++) {
+      const g = (this.babyG + 1 + i) % this.turtleGens.length;
+      this.turtleGens[g].draw(this.ctx, this.dna[i]);
     }
   }
 }
 
 class Playback {
-  constructor(sim, speed, updateUI) {
+  constructor(sim, speed, updateUI, pauseBtn) {
     this.sim = sim;
     this.speed = speed;
     // stepMS is the target duration of one step, with speed 0 having a target
@@ -343,6 +373,7 @@ class Playback {
     this.pause = false;
     this.running = false;
     this.updateUI = updateUI;
+    this.pauseBtn = pauseBtn;
   }
 
   restart() {
@@ -353,33 +384,20 @@ class Playback {
     }
   }
 
-  playPause(pauseBtn) {
+  playPause() {
     this.pause = !this.pause;
-    pauseBtn.textContent = this.pause ? "\u25B6\uFE0E" : "\u23F8\uFE0E";
+    this.pauseBtn.textContent = this.pause ? "\u25B6\uFE0E" : "\u23F8\uFE0E";
     this.restart();
   }
 
-  // Each call to faster doubles the speed of playback.
-  faster() {
-    if (this.speed < 5) {
-      this.speed++;
-      this.stepMS = 2 ** -this.speed * 16;
-    }
-  }
-
-  // Each call to slower halves the speed of playback;
-  slower() {
-    if (this.speed > -5) {
-      this.speed--;
-      this.stepMS = 2 ** -this.speed * 16;
-    }
+  setSpeed(speed) {
+    this.speed = speed;
+    this.stepMS = 2 ** -this.speed * 16;
   }
 
   // animate is the game loop.  It is called once per frame.
   animate(curTime, prevTime) {
-    ////console.log("animate");
     if (this.sim.turtles < 1 || this.pause) {
-      //console.log("stopping");
       this.running = false;
       this.updateUI();
       return;
@@ -387,10 +405,18 @@ class Playback {
     let elapsed = curTime - prevTime;
     this.accumulator += elapsed;
     // Discover the frameMS for this system.
-    //if (this.frameMS > elapsedMS && elapsedMS > 2) {
-    //  this.frameMS = elapsedMS;
-    //}
     this.frameMS = 0.9 * this.frameMS + 0.1 * elapsed;
+
+    if (this.speed < -3) {
+      this.sim.step();
+      this.sim.draw();
+      this.updateUI();
+      this.running = false;
+      this.pause = true;
+      this.pauseBtn.textContent = "\u25B6\uFE0E";
+      return;
+    }
+
     const budget = this.frameMS - 2;
     const loopStart = performance.now();
     while (this.accumulator >= this.stepMS) {
@@ -399,12 +425,10 @@ class Playback {
       // Bound the amount of work we do in case there was a long delay between
       // callbacks or we spent too long updating the simulation.
       if (performance.now() - loopStart > budget) {
-        //console.log("hit budget");
         this.accumulator = 0;
         break;
       }
     }
-    //console.log("drawing");
     this.sim.draw();
     this.updateUI();
     requestAnimationFrame(time => this.animate(time, curTime));
@@ -414,40 +438,120 @@ class Playback {
 function main() {
   const seaCanvas  = document.getElementById("sea");
   const turtlesOut = document.getElementById("turtles");
-  const actionsOut = document.getElementById("actions");
-  const visitedOut = document.getElementById("visited");
+  const stepsOut   = document.getElementById("steps");
+  const birthsOut  = document.getElementById("births");
   const dnaTextbox = document.getElementById("dna");
+
+  const ctrlH2 = document.getElementById("ctrl");
+  const speedRange = document.getElementById("speed");
+  //const scaleRange = document.getElementById("scale");
   const restartBtn = document.getElementById("restart");
   const pauseBtn   = document.getElementById("pause");
-  const fasterBtn  = document.getElementById("faster");
-  const slowerBtn  = document.getElementById("slower");
+  //const fasterBtn  = document.getElementById("faster");
+  //const slowerBtn  = document.getElementById("slower");
+  const speedModal = document.getElementById("speed-modal");
+  //const scaleModal = document.getElementById("scale-modal");
   const forwardBtn = document.getElementById("forward");
   const leftBtn    = document.getElementById("left");
   const rightBtn   = document.getElementById("right");
   const poopBtn    = document.getElementById("poop");
   const babyBtn    = document.getElementById("baby");
-  //const delBtn     = document.getElementById("delete");
+  const delBtn     = document.getElementById("delete");
   const cleanBtn   = document.getElementById("clean");
   const biggerBtn  = document.getElementById("bigger");
   const smallerBtn = document.getElementById("smaller");
 
-  let scale = 8;
+  let dna = dnaTextbox.value;
+  let scale = 6;
   seaCanvas.width = 1 << scale;
   seaCanvas.height = 1 << scale;
   let ctx = seaCanvas.getContext("2d", {alpha: false});
   ctx.imageSmoothingEnabled = false;
-  const sim = new Simulation(dnaTextbox.value, scale, ctx);
+  const sim = new Simulation(dna, scale, ctx);
 
   const updateUI = () => {
     turtlesOut.value = sim.turtles;
-    actionsOut.value = sim.steps;
-    visitedOut.value = sim.visited;
+    stepsOut.value = sim.steps;
+    birthsOut.value = sim.births;
   };
 
-  const playback = new Playback(sim, 0, updateUI);
+  const playback = new Playback(sim, 0, updateUI, pauseBtn);
 
+  let speedMode = false;
+  //let scaleMode = false;
+  speedModal.addEventListener("click", () => {
+    if (speedMode) {
+      ctrlH2.style.display = "inline-grid";
+      speedRange.style.display = "none";
+      //speedModal.style.color = "";
+      speedMode = false;
+    } else {
+      ctrlH2.style.display = "none";
+      //scaleRange.style.display = "none";
+      //scaleModal.style.color = "";
+      speedRange.style.display = "inline-grid";
+      //speedModal.style.color = "red";
+      //scaleMode = false;
+      speedMode = true;
+    }
+  });
+
+  const speeds = ["0\u00D7", "\u215B\u00D7", "\u00BC\u00D7", "\u00BD\u00D7", "1\u00D7", "2\u00D7", "4\u00D7", "8\u00D7"];
+  speedRange.addEventListener("input", () => {
+    const speed = parseInt(speedRange.value);
+    speedModal.textContent = speeds[speed + 4];
+    playback.setSpeed(speed);
+  });
+
+  /*
+    scaleModal.addEventListener("click", () => {
+    if (scaleMode) {
+    ctrlH2.style.display = "inline-grid";
+    scaleRange.style.display = "none";
+    scaleModal.style.color = "";
+    scaleMode = false;
+    } else {
+    ctrlH2.style.display = "none";
+    speedRange.style.display = "none";
+    speedModal.style.color = "";
+    scaleRange.style.display = "inline-grid";
+    scaleModal.style.color = "red";
+    speedMode = false;
+    scaleMode = true;
+    }
+    });
+
+    const scales = ["\u25A1\u00B2", "\u25A1\u00B3", "\u25A1\u2074", "\u25A1\u2075", "\u25A1\u2076", "\u25A1\u2077", "\u25A1\u2078", "\u25A1\u2079", "\u25A1\u00B9\u2070"];
+    scaleRange.addEventListener("input", () => {
+    const scaleSet = parseInt(scaleRange.value);
+    scaleModal.textContent = scales[scaleSet - 2];
+    if (scale === scaleSet) {
+    return;
+    }
+    scale = scaleSet;
+    seaCanvas.width = 1 << scale;
+    seaCanvas.height = 1 << scale;
+    ctx = seaCanvas.getContext("2d", {alpha: false});
+    ctx.imageSmoothingEnabled = false;
+    sim.resetScale(scale, ctx);
+    sim.draw();
+    updateUI();
+    playback.restart();
+    });
+  */
+
+  const notAllowed = /[^FLRPBC]/g;
   dnaTextbox.addEventListener("input", () => {
-    sim.resetDNA(dnaTextbox.value);
+    const upper = dnaTextbox.value.toUpperCase();
+    const filtered = upper.replace(notAllowed, "");
+    if (dnaTextbox.value !== filtered) {
+      dnaTextbox.value = filtered;
+    }
+    if (dna === dnaTextbox.value) {
+      return;
+    }
+    dna = dnaTextbox.value;
+    sim.resetDNA(dna);
     sim.draw();
     updateUI();
     playback.restart();
@@ -495,15 +599,13 @@ function main() {
     updateUI();
     playback.restart();
   });
-  /*
   delBtn.addEventListener("click", () => {
     dnaTextbox.value = dnaTextbox.value.slice(0, -1);
     sim.resetDNA(dnaTextbox.value);
     sim.draw();
     updateUI();
     playback.restart();
-    });
-  */
+  });
 
   biggerBtn.addEventListener("click", () => {
     if (scale <= 2) {
@@ -520,7 +622,7 @@ function main() {
     playback.restart();
   });
   smallerBtn.addEventListener("click", () => {
-    if (scale >= 12) {
+    if (scale >= 10) {
       return;
     }
     scale++;
@@ -541,9 +643,9 @@ function main() {
     playback.restart();
   });
 
-  pauseBtn.addEventListener("click", () => playback.playPause(pauseBtn));
-  fasterBtn.addEventListener("click", () => playback.faster());
-  slowerBtn.addEventListener("click", () => playback.slower());
+  pauseBtn.addEventListener("click", () => playback.playPause());
+  //fasterBtn.addEventListener("click", () => playback.faster());
+  //slowerBtn.addEventListener("click", () => playback.slower());
 
   playback.restart();
 }
@@ -552,3 +654,8 @@ document.addEventListener("DOMContentLoaded", main)
 
 // From Matilda: CLCLLRPRPFBFBLCLCRPRPFBFBRPLFBCPRLFBC
 // From Michael: FFFFFFFFFFFFFFFFFFFFFFPFFFFFFFFRBFFFB
+// Bug? BBFFLLRRPPCCBBFFLLRRPPCCBBFFLLRRPPCCBFLRPC
+// another from Matilda: BFLBFLRPCRPCLLLRRRPPPCCCBBBFFF
+
+// From Abbie: FFFLFFFBPFFFBCFFBFFB
+// From Michael: FFFFFFFFFFPPFFFFFFFFRBFBLC
