@@ -10,6 +10,8 @@
 //   - clean up main
 //   - when typing lowercase into textarea cursor jumps to end
 //   - speed slider not in sync sometimes?
+//   - react-style render function which checks all state and updates all UI
+//   - disable bigger and smaller buttons when at limits
 
 // TurtleGeneration represents one cohort of sea turtles that are born during
 // the same step.  This cohort will never grow or shrink, and will always
@@ -461,7 +463,9 @@ function main() {
   const biggerBtn  = document.getElementById("bigger");
   const smallerBtn = document.getElementById("smaller");
 
+  const urlParams = new URLSearchParams(window.location.search);
   let dna = dnaTextbox.value;
+
   let scale = 6;
   seaCanvas.width = 1 << scale;
   seaCanvas.height = 1 << scale;
@@ -540,13 +544,7 @@ function main() {
     });
   */
 
-  const notAllowed = /[^FLRPBC]/g;
-  dnaTextbox.addEventListener("input", () => {
-    const upper = dnaTextbox.value.toUpperCase();
-    const filtered = upper.replace(notAllowed, "");
-    if (dnaTextbox.value !== filtered) {
-      dnaTextbox.value = filtered;
-    }
+  const dnaChange = () => {
     if (dna === dnaTextbox.value) {
       return;
     }
@@ -555,56 +553,59 @@ function main() {
     sim.draw();
     updateUI();
     playback.restart();
+    if (urlParams.has('dna')) {
+      if (dna !== '') {
+        urlParams.set('dna', dna.toLowerCase());
+      } else {
+        urlParams.delete('dna');
+      }
+    } else if (dna !== '') {
+      urlParams.append('dna', dna.toLowerCase());
+    }
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}?${urlParams}`
+    );
+  };
+
+  const notAllowed = /[^FLRPBC]/g;
+  dnaTextbox.addEventListener("input", () => {
+    const upper = dnaTextbox.value.toUpperCase();
+    const filtered = upper.replace(notAllowed, "");
+    if (dnaTextbox.value !== filtered) {
+      dnaTextbox.value = filtered;
+    }
+    dnaChange();
   });
 
   forwardBtn.addEventListener("click", () => {
     dnaTextbox.value += "F";
-    sim.resetDNA(dnaTextbox.value);
-    sim.draw();
-    updateUI();
-    playback.restart();
+    dnaChange();
   });
   leftBtn.addEventListener("click", () => {
     dnaTextbox.value += "L";
-    sim.resetDNA(dnaTextbox.value);
-    sim.draw();
-    updateUI();
-    playback.restart();
+    dnaChange();
   });
   rightBtn.addEventListener("click", () => {
     dnaTextbox.value += "R";
-    sim.resetDNA(dnaTextbox.value);
-    sim.draw();
-    updateUI();
-    playback.restart();
+    dnaChange();
   });
   poopBtn.addEventListener("click", () => {
     dnaTextbox.value += "P";
-    sim.resetDNA(dnaTextbox.value);
-    sim.draw();
-    updateUI();
-    playback.restart();
+    dnaChange();
   });
   babyBtn.addEventListener("click", () => {
     dnaTextbox.value += "B";
-    sim.resetDNA(dnaTextbox.value);
-    sim.draw();
-    updateUI();
-    playback.restart();
+    dnaChange();
   });
   cleanBtn.addEventListener("click", () => {
     dnaTextbox.value += "C";
-    sim.resetDNA(dnaTextbox.value);
-    sim.draw();
-    updateUI();
-    playback.restart();
+    dnaChange();
   });
   delBtn.addEventListener("click", () => {
     dnaTextbox.value = dnaTextbox.value.slice(0, -1);
-    sim.resetDNA(dnaTextbox.value);
-    sim.draw();
-    updateUI();
-    playback.restart();
+    dnaChange();
   });
 
   biggerBtn.addEventListener("click", () => {
@@ -659,3 +660,8 @@ document.addEventListener("DOMContentLoaded", main)
 
 // From Abbie: FFFLFFFBPFFFBCFFBFFB
 // From Michael: FFFFFFFFFFPPFFFFFFFFRBFBLC
+// CFFFFFFFFFFFFFFPFPFPRRFPRRFPFPFFFFFFFFPFPFPLLFPLLFPFPBLLB
+// FPPFPFPRRFPFPFPFPLLFPFPFPFPCLLFPFPCCCPFPFPFPRRBLCLLLBRPPPFPPFPPFPPFPPPFPPPFPPPFPPPFPPPFPFFPFCCCRCCCFFPFPFPPFPFPFPFPRRBCC
+// FPFPFPFPRRBLLBLLFPPCFFFFFFFFPCFRPPBFBFBFBFBFRPC
+// FPFPLFPFPBRRRRFFLLFPFPBC
+
