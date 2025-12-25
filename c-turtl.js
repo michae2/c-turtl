@@ -16,14 +16,16 @@
 // TurtleGeneration represents one cohort of sea turtles that are born during
 // the same step.  This cohort will never grow or shrink, and will always
 // execute the same DNA command at the same time, so we group them together for
-// better performance.
+// better performance.  TurtleGeneration is a struct-of-arrays, meaning each
+// individual turle is represented as an index within all of the arrays tracking
+// turtle attributes.
 class TurtleGeneration {
-  constructor(cap) {
+  constructor(capacity) {
     this.length = 0;
-    this.x = new Int32Array(cap);
-    this.y = new Int32Array(cap);
-    this.dx = new Int32Array(cap);
-    this.dy = new Int32Array(cap);
+    this.x = new Int32Array(capacity);
+    this.y = new Int32Array(capacity);
+    this.dx = new Int32Array(capacity);
+    this.dy = new Int32Array(capacity);
   }
 
   reset() {
@@ -237,11 +239,12 @@ class TurtleGeneration {
   }
 }
 
-// Simulation holds all of the sea turtle generations and their positions within
-// the DNA program.  Simulation also applies DNA commands to each sea turtle
-// generation, and tracks some stats.
+// Simulation is a singleton class that holds all of the sea turtle generations
+// and their positions within the DNA program.  Simulation also applies DNA
+// commands to each sea turtle generation, tracks some stats, and handles
+// drawing the turtles and poop to the canvas.
 class Simulation {
-  constructor(dna, scale, ctx) {
+  constructor(dna, scale, canvas) {
     this.dna = dna;
     this.size = 1 << scale;
     this.turtleGens = new Array(this.dna.length + 1);
@@ -256,7 +259,11 @@ class Simulation {
     this.turtles = 0;
     this.births = 0;
 
-    this.ctx = ctx;
+    this.canvas = canvas;
+    this.canvas.width = this.size;
+    this.canvas.height = this.size;
+    this.ctx = this.canvas.getContext('2d', {alpha: false});
+    this.ctx.imageSmoothingEnabled = false;
     this.poopBuffer = this.ctx.createImageData(this.size, this.size);
 
     this.reset();
@@ -293,14 +300,19 @@ class Simulation {
     this.reset();
   }
 
-  resetScale(scale, ctx) {
-    this.size = 1 << scale;
-    const babySetLen = 1 << scale << scale;
-    if (this.babySet.length < babySetLen) {
-      this.babySet = new Uint8Array(babySetLen);
+  resetScale(scale) {
+    if (this.size !== 1 << scale) {
+      this.size = 1 << scale;
+      const babySetLen = 1 << scale << scale;
+      if (this.babySet.length < babySetLen) {
+        this.babySet = new Uint8Array(babySetLen);
+      }
+      this.canvas.width = this.size;
+      this.canvas.height = this.size;
+      this.ctx = this.canvas.getContext('2d', {alpha: false});
+      this.ctx.imageSmoothingEnabled = false;
+      this.poopBuffer = this.ctx.createImageData(this.size, this.size);
     }
-    this.ctx = ctx;
-    this.poopBuffer = this.ctx.createImageData(this.size, this.size);
     this.reset();
   }
 
@@ -359,6 +371,7 @@ class Simulation {
   }
 }
 
+// Playback is a singleton class that holds the state for the animation loop.
 class Playback {
   constructor(sim, speed, updateUI, pauseBtn) {
     this.sim = sim;
@@ -372,22 +385,27 @@ class Playback {
     // and then lower it.
     this.frameMS = 33;
     this.accumulator = 0;
+    // pause is whether a pause has been requested.
     this.pause = false;
+    // running is whether there is an animate call scheduled.
     this.running = false;
     this.updateUI = updateUI;
     this.pauseBtn = pauseBtn;
   }
 
+  // restart schedules the first call to animate if it is not currently
+  // scheduled.  (If playback is paused, restart does nothing.)
   restart() {
     if (!this.pause && !this.running) {
-      requestAnimationFrame(time => this.animate(time, time - this.stepMS));
-      this.accumulator = 0;
       this.running = true;
+      this.accumulator = 0;
+      requestAnimationFrame(time => this.animate(time, time - this.stepMS));
     }
   }
 
   playPause() {
     this.pause = !this.pause;
+    // TODO: move this out?
     this.pauseBtn.textContent = this.pause ? "\u25B6\uFE0E" : "\u23F8\uFE0E";
     this.restart();
   }
@@ -397,7 +415,8 @@ class Playback {
     this.stepMS = 2 ** -this.speed * 16;
   }
 
-  // animate is the game loop.  It is called once per frame.
+  // animate is the animation loop, or game loop.  It is scheduled once per
+  // frame while playback is running.
   animate(curTime, prevTime) {
     if (this.sim.turtles < 1 || this.pause) {
       this.running = false;
@@ -411,7 +430,6 @@ class Playback {
 
     if (this.speed < -3) {
       this.sim.step();
-      this.sim.draw();
       this.updateUI();
       this.running = false;
       this.pause = true;
@@ -431,13 +449,110 @@ class Playback {
         break;
       }
     }
-    this.sim.draw();
     this.updateUI();
     requestAnimationFrame(time => this.animate(time, curTime));
   }
 }
 
+// Scenario
+class Scenario {
+  constructor(dnaTextArea, speedRange) {
+    this.params = new URLSearchParams(window.location.search);
+
+    this.dna = dnaTextArea.value;
+    // validate the DNA here?
+    if (this.params.has('dna')) {
+      const upper = this.params.get('dna').toUpperCase();
+      const notAllowed = /[^FLRPBC]/g;
+      this.dna = upper.replace(notAllowed, "");
+      this.store('dna', this.dna.toLowerCase());
+      dnaTextArea.value = this.dna;
+    }
+
+    this.speed = parseInt(speedRange.value);
+    if (this.params.has('speed')) {
+      this.setSpeed(this.params.get('speed'));
+      speedRange.value = this.speed.toString();
+    }
+
+    this.scale = 6;
+    if (this.params.has('scale')) {
+      const parsedScale = parseInt(this.params.get('scale'));
+      if (!Number.isNaN(parsedScale)) {
+        this.scale = Math.min(10, Math.max(2, parsedScale));
+      }
+      this.store('scale', this.scale.toString());
+    }
+  }
+
+  store(param, value) {
+    if (this.params.has(param)) {
+      if (this.params.get(param) === value) {
+        return;
+      }
+      this.params.set(param, value);
+    } else {
+      this.params.append(param, value);
+    }
+    const url = `${window.location.pathname}?${this.params}`;
+    window.history.replaceState({}, "", url);
+  }
+
+  dnaInput(dnaTextArea, text) {
+    const upper = text.toUpperCase();
+    const notAllowed = /[^FLRPBC]/g;
+    dnaTextArea.setRangeText(upper.replace(notAllowed, ""));
+    this.dna = dnaTextArea.value;
+    this.store('dna', this.dna.toLowerCase());
+  }
+
+  dnaButton(dnaTextArea, letter) {
+    dnaTextArea.setRangeText(letter);
+    this.store('dna', this.dna.toLowerCase());
+  }
+
+  dnaDelete(dnaTextArea) {
+    const start = dnaTextArea.selectionStart;
+    const end = dnaTextArea.selectionEnd;
+    if (start === end) {
+      dnaTextArea.setRangeText("", start - 1, end, 'start');
+    } else {
+      dnaTextArea.setRangeText("");
+    }
+    this.dna = dnaTextArea.value;
+    this.store('dna', this.dna.toLowerCase());
+  }
+
+  setSpeed(speed) {
+    const parsedSpeed = parseInt(speed);
+    if (!Number.isNaN(parsedSpeed)) {
+      this.speed = Math.min(3, Math.max(-4, parsed));
+    }
+    this.store('speed', this.speed.toString());
+  }
+
+  bigger() {
+    if (this.scale <= 2) {
+      return false;
+    }
+    this.scale--;
+    this.store('scale', this.scale.toString());
+    return true;
+  }
+
+  smaller() {
+    if (this.scale >= 10) {
+      return false;
+    }
+    this.scale++;
+    this.store('scale', this.scale.toString());
+    return true;
+  }
+}
+
 function main() {
+  const urlParams  = new URLSearchParams(window.location.search);
+
   const seaCanvas  = document.getElementById("sea");
   const turtlesOut = document.getElementById("turtles");
   const stepsOut   = document.getElementById("steps");
@@ -463,17 +578,44 @@ function main() {
   const biggerBtn  = document.getElementById("bigger");
   const smallerBtn = document.getElementById("smaller");
 
-  const urlParams = new URLSearchParams(window.location.search);
+  const notAllowed = /[^FLRPBC]/g;
+
   let dna = dnaTextbox.value;
+  if (urlParams.has('dna')) {
+    const upper = urlParams.get('dna').toUpperCase();
+    const filtered = upper.replace(notAllowed, "");
+    dnaTextbox.value = filtered;
+    dna = filtered;
+    if (dna.toLowerCase() !== urlParams.get('dna')) {
+      urlParams.set('dna', dna.toLowerCase());
+      window.history.replaceState(
+        {},
+        '',
+        `${window.location.pathname}?${urlParams}`
+      );
+    }
+  }
 
   let scale = 6;
-  seaCanvas.width = 1 << scale;
-  seaCanvas.height = 1 << scale;
-  let ctx = seaCanvas.getContext("2d", {alpha: false});
-  ctx.imageSmoothingEnabled = false;
-  const sim = new Simulation(dna, scale, ctx);
+  if (urlParams.has('scale')) {
+    const parsed = parseInt(urlParams.get('scale'));
+    if (!Number.isNaN(parsed)) {
+      scale = Math.min(10, Math.max(2, parsed));
+      if (scale.toString() !== urlParams.get('scale')) {
+        urlParams.set('scale', scale.toString());
+        window.history.replaceState(
+          {},
+          '',
+          `${window.location.pathname}?${urlParams}`
+        );
+      }
+    }
+  }
+
+  const sim = new Simulation(dna, scale, seaCanvas);
 
   const updateUI = () => {
+    sim.draw();
     turtlesOut.value = sim.turtles;
     stepsOut.value = sim.steps;
     birthsOut.value = sim.births;
@@ -533,12 +675,7 @@ function main() {
     return;
     }
     scale = scaleSet;
-    seaCanvas.width = 1 << scale;
-    seaCanvas.height = 1 << scale;
-    ctx = seaCanvas.getContext("2d", {alpha: false});
-    ctx.imageSmoothingEnabled = false;
-    sim.resetScale(scale, ctx);
-    sim.draw();
+    sim.resetScale(scale);
     updateUI();
     playback.restart();
     });
@@ -550,7 +687,6 @@ function main() {
     }
     dna = dnaTextbox.value;
     sim.resetDNA(dna);
-    sim.draw();
     updateUI();
     playback.restart();
     if (urlParams.has('dna')) {
@@ -569,7 +705,6 @@ function main() {
     );
   };
 
-  const notAllowed = /[^FLRPBC]/g;
   dnaTextbox.addEventListener("input", () => {
     const upper = dnaTextbox.value.toUpperCase();
     const filtered = upper.replace(notAllowed, "");
@@ -604,7 +739,11 @@ function main() {
     dnaChange();
   });
   delBtn.addEventListener("click", () => {
-    dnaTextbox.value = dnaTextbox.value.slice(0, -1);
+    if (dnaTextbox.selectionStart !== dnaTextbox.selectionEnd) {
+      dnaTextbox.setRangeText("");
+    } else {
+      dnaTextbox.value = dnaTextbox.value.slice(0, -1);
+    }
     dnaChange();
   });
 
@@ -613,33 +752,42 @@ function main() {
       return;
     }
     scale--;
-    seaCanvas.width = 1 << scale;
-    seaCanvas.height = 1 << scale;
-    ctx = seaCanvas.getContext("2d", {alpha: false});
-    ctx.imageSmoothingEnabled = false;
-    sim.resetScale(scale, ctx);
-    sim.draw();
+    sim.resetScale(scale);
     updateUI();
     playback.restart();
+    if (urlParams.has('scale')) {
+      urlParams.set('scale', scale.toString());
+    } else {
+      urlParams.append('scale', scale.toString());
+    }
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}?${urlParams}`
+    );
   });
   smallerBtn.addEventListener("click", () => {
     if (scale >= 10) {
       return;
     }
     scale++;
-    seaCanvas.width = 1 << scale;
-    seaCanvas.height = 1 << scale;
-    ctx = seaCanvas.getContext("2d", {alpha: false});
-    ctx.imageSmoothingEnabled = false;
-    sim.resetScale(scale, ctx);
-    sim.draw();
+    sim.resetScale(scale);
     updateUI();
     playback.restart();
+    if (urlParams.has('scale')) {
+      urlParams.set('scale', scale.toString());
+    } else {
+      urlParams.append('scale', scale.toString());
+    }
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}?${urlParams}`
+    );
   });
 
   restartBtn.addEventListener("click", () => {
     sim.reset();
-    sim.draw();
     updateUI();
     playback.restart();
   });
@@ -649,6 +797,12 @@ function main() {
   //slowerBtn.addEventListener("click", () => playback.slower());
 
   playback.restart();
+
+  // instead of state changes calling into UI code, we want:
+  // 1. a. initialize model state from URL or other stuff
+  //    b. ask UI to redraw itself
+  // 2. a. buttons -> change model state
+  //    b. and then ask UI to redraw itself, it looks at whatever model state
 }
 
 document.addEventListener("DOMContentLoaded", main)
@@ -664,4 +818,3 @@ document.addEventListener("DOMContentLoaded", main)
 // FPPFPFPRRFPFPFPFPLLFPFPFPFPCLLFPFPCCCPFPFPFPRRBLCLLLBRPPPFPPFPPFPPFPPPFPPPFPPPFPPPFPPPFPFFPFCCCRCCCFFPFPFPPFPFPFPFPRRBCC
 // FPFPFPFPRRBLLBLLFPPCFFFFFFFFPCFRPPBFBFBFBFBFRPC
 // FPFPLFPFPBRRRRFFLLFPFPBC
-
