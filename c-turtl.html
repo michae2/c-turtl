@@ -41,37 +41,42 @@
         <option value="2" label="4"></option>
         <option value="3" label="8"></option>
       </datalist>
-      <!--
-      <label for="scale" style="display: none;">Scale</label>
-      <input id="scale" name="scale" type="range" min="2", max="10", value="6" list="scale-marks" />
-      <datalist id="scale-marks" style="display: none;">
-        <option value="2" label="2"></option>
-        <option value="3" label="3"></option>
-        <option value="4" label="4"></option>
-        <option value="5" label="5"></option>
-        <option value="6" label="6"></option>
-        <option value="7" label="7"></option>
-        <option value="8" label="8"></option>
-        <option value="9" label="9"></option>
-        <option value="10" label="10"></option>
-      </datalist>
-      -->
-      <button id="restart" type="button" title="Restart" aria-label="Restart">&#x23EE;&#xFE0E;</button>
-      <button id="pause" type="button" title="Pause" aria-label="Pause">&#x23F8;&#xFE0E;</button>
-      <button id="speed-modal" type="button" title="Speed" aria-label="">1&#x00D7</button>
-      <!--<button id="scale-modal" type="button" title="Scale" aria-label="Scale">&#x25A1;&#x2076;</button>-->
-      <!--<button id="faster" type="button" title="Faster" aria-label="Faster">&#x23F6;&#xFE0E;</button>-->
-      <!--<button id="slower" type="button" title="Slower" aria-label="Slower">&#x23F7;&#xFE0E;</button>-->
-      <button id="delete" type="button" title="Delete" aria-label="Delete">&#x2421;</button>
-      <button id="forward" type="button" title="Forward" aria-label="F" style="color: #66cc66;">F</button>
-      <button id="left" type="button" title="Turn left" aria-label="L" style="color: #66cc66;">L</button>
-      <button id="right" type="button" title="Turn right" aria-label="R" style="color: #66cc66;">R</button>
-      <button id="baby" type="button" title="Baby" aria-label="B" style="color: #9966cc;">B</button>
-      <button id="poop" type="button" title="Poop" aria-label="P" style="color: #cc9966;">P</button>
-      <button id="clean" type="button" title="Clean" aria-label="C" style="color: #6699cc;">C</button>
-      <button id="bigger" type="button" title="Zoom in" aria-label="Zoom in">&#x25A1;</button>
-      <button id="smaller" type="button" title="Zoom out" aria-label="Zoom out">&#x25AB;</button>
-      <!--<button id="fullscreen" type="button" title="Full Screen" aria-label="Full Screen">&#x26F6;</button>-->
+      <button id="restart" type="button" title="Restart" aria-label="Restart">
+        <span aria-hidden="true">&#x23EE;&#xFE0E;</span>
+      </button>
+      <button id="pause" type="button" title="Pause" aria-label="Pause">
+        <span aria-hidden="true">&#x23F8;&#xFE0E;</span>
+      </button>
+      <button id="speed-modal" type="button" title="Speed" aria-label="">
+        <span aria-hidden="true">1&#x00D7</span>
+      </button>
+      <button id="delete" type="button" title="Delete" aria-label="Delete">
+        <span aria-hidden="true">&#x2421;</span>
+      </button>
+      <button id="forward" type="button" title="Forward" aria-label="F" style="color: #66cc66;">
+        <span aria-hidden="true">F</span>
+      </button>
+      <button id="left" type="button" title="Turn left" aria-label="L" style="color: #66cc66;">
+        <span aria-hidden="true">L</span>
+      </button>
+      <button id="right" type="button" title="Turn right" aria-label="R" style="color: #66cc66;">
+        <span aria-hidden="true">R</span>
+      </button>
+      <button id="baby" type="button" title="Baby" aria-label="B" style="color: #9966cc;">
+        <span aria-hidden="true">B</span>
+      </button>
+      <button id="poop" type="button" title="Poop" aria-label="P" style="color: #cc9966;">
+        <span aria-hidden="true">P</span>
+      </button>
+      <button id="clean" type="button" title="Clean" aria-label="C" style="color: #6699cc;">
+        <span aria-hidden="true">C</span>
+      </button>
+      <button id="bigger" type="button" title="Zoom in" aria-label="Zoom in">
+        <span aria-hidden="true">&#x25A1;</span>
+      </button>
+      <button id="smaller" type="button" title="Zoom out" aria-label="Zoom out">
+        <span aria-hidden="true">&#x25AB;</span>
+      </button>
     </section>
   </main>
   <script src="c-turtl.js" defer></script>

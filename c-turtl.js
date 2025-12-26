@@ -5,7 +5,8 @@
 //   - max size for controls? min size for controls?
 //   - instructions
 //   - fix on safari
-//   - disable bigger and smaller buttons when at limits
+//   - from Cliff: show path of first turtle for debugging
+//   - move selection to end for buttons?
 
 // TurtleGeneration represents one cohort of sea turtles that are born during
 // the same step.  This cohort will never grow or shrink, and will always
@@ -556,7 +557,9 @@ document.addEventListener('DOMContentLoaded', (e) => {
   const speedRange  = document.getElementById('speed');
   const restartBtn  = document.getElementById('restart');
   const pauseBtn    = document.getElementById('pause');
+  const pauseSpan   = pauseBtn.querySelector('span');
   const speedModal  = document.getElementById('speed-modal');
+  const speedSpan   = speedModal.querySelector('span');
   const delBtn      = document.getElementById('delete');
   const forwardBtn  = document.getElementById('forward');
   const leftBtn     = document.getElementById('left');
@@ -568,7 +571,7 @@ document.addEventListener('DOMContentLoaded', (e) => {
   const smallerBtn  = document.getElementById('smaller');
 
   const scenario = new Scenario(dnaTextArea, speedRange);
-  const sim = new Simulation(scenario.dna, scenario.scale, seaCanvas);
+  const sim      = new Simulation(scenario.dna, scenario.scale, seaCanvas);
   const playback = new Playback(sim, scenario.speed);
 
   const speeds = ['0\u00D7', '\u215B\u00D7', '\u00BC\u00D7', '\u00BD\u00D7',
@@ -578,8 +581,8 @@ document.addEventListener('DOMContentLoaded', (e) => {
     turtlesOut.value = sim.turtles;
     stepsOut.value = sim.steps;
     birthsOut.value = sim.births;
-    pauseBtn.textContent = playback.pause ? '\u25B6\uFE0E' : '\u23F8\uFE0E';
-    speedModal.textContent = speeds[scenario.speed + 4];
+    pauseSpan.textContent = playback.pause ? '\u25B6\uFE0E' : '\u23F8\uFE0E';
+    speedSpan.textContent = speeds[scenario.speed + 4];
   };
   playback.updateUI = updateUI;
 
@@ -651,26 +654,34 @@ document.addEventListener('DOMContentLoaded', (e) => {
     playback.restart();
     // TODO: do we need to return focus to the dnaTextArea?
   };
-  delBtn.addEventListener('click', (e) => dnaButton(''));
+  delBtn.addEventListener(    'click', (e) => dnaButton(''));
   forwardBtn.addEventListener('click', (e) => dnaButton('F'));
-  leftBtn.addEventListener('click', (e) => dnaButton('L'));
-  rightBtn.addEventListener('click', (e) => dnaButton('R'));
-  babyBtn.addEventListener('click', (e) => dnaButton('B'));
-  poopBtn.addEventListener('click', (e) => dnaButton('P'));
-  cleanBtn.addEventListener('click', (e) => dnaButton('C'));
+  leftBtn.addEventListener(   'click', (e) => dnaButton('L'));
+  rightBtn.addEventListener(  'click', (e) => dnaButton('R'));
+  babyBtn.addEventListener(   'click', (e) => dnaButton('B'));
+  poopBtn.addEventListener(   'click', (e) => dnaButton('P'));
+  cleanBtn.addEventListener(  'click', (e) => dnaButton('C'));
 
   biggerBtn.addEventListener('click', (e) => {
     if (scenario.bigger()) {
       sim.resetScale(scenario.scale);
       updateUI();
+      smallerBtn.disabled = false;
       playback.restart();
+    }
+    if (scenario.scale <= 2) {
+      biggerBtn.disabled = true;
     }
   });
   smallerBtn.addEventListener('click', (e) => {
     if (scenario.smaller()) {
       sim.resetScale(scenario.scale);
       updateUI();
+      biggerBtn.disabled = false;
       playback.restart();
+    }
+    if (scenario.scale >= 10) {
+      smallerBtn.disabled = true;
     }
   });
 
@@ -688,3 +699,4 @@ document.addEventListener('DOMContentLoaded', (e) => {
 // FPPFPFPRRFPFPFPFPLLFPFPFPFPCLLFPFPCCCPFPFPFPRRBLCLLLBRPPPFPPFPPFPPFPPPFPPPFPPPFPPPFPPPFPFFPFCCCRCCCFFPFPFPPFPFPFPFPRRBCC
 // FPFPFPFPRRBLLBLLFPPCFFFFFFFFPCFRPPBFBFBFBFBFRPC
 // FPFPLFPFPBRRRRFFLLFPFPBC
+// FCPPPFPPPCBRRRFFFPFPFPFPFPFPFPFFPRBCRRFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFRPFFFFFFFFFFFFBC
