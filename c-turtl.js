@@ -1,16 +1,10 @@
 "use strict";
 
 // TODO:
-//   - save textarea edits across reloads?
-//   - update URL to save links
 //   - fix H1 title
 //   - max size for controls? min size for controls?
 //   - instructions
 //   - fix on safari
-//   - clean up main
-//   - when typing lowercase into textarea cursor jumps to end
-//   - speed slider not in sync sometimes?
-//   - react-style render function which checks all state and updates all UI
 //   - disable bigger and smaller buttons when at limits
 
 // TurtleGeneration represents one cohort of sea turtles that are born during
@@ -373,7 +367,7 @@ class Simulation {
 
 // Playback is a singleton class that holds the state for the animation loop.
 class Playback {
-  constructor(sim, speed, updateUI, pauseBtn) {
+  constructor(sim, speed) {
     this.sim = sim;
     this.speed = speed;
     // stepMS is the target duration of one step, with speed 0 having a target
@@ -389,8 +383,7 @@ class Playback {
     this.pause = false;
     // running is whether there is an animate call scheduled.
     this.running = false;
-    this.updateUI = updateUI;
-    this.pauseBtn = pauseBtn;
+    this.updateUI = () => {};
   }
 
   // restart schedules the first call to animate if it is not currently
@@ -405,8 +398,6 @@ class Playback {
 
   playPause() {
     this.pause = !this.pause;
-    // TODO: move this out?
-    this.pauseBtn.textContent = this.pause ? "\u25B6\uFE0E" : "\u23F8\uFE0E";
     this.restart();
   }
 
@@ -430,10 +421,9 @@ class Playback {
 
     if (this.speed < -3) {
       this.sim.step();
-      this.updateUI();
       this.running = false;
       this.pause = true;
-      this.pauseBtn.textContent = "\u25B6\uFE0E";
+      this.updateUI();
       return;
     }
 
@@ -455,6 +445,7 @@ class Playback {
 }
 
 // Scenario
+// TODO: add pause
 class Scenario {
   constructor(dnaTextArea, speedRange) {
     this.params = new URLSearchParams(window.location.search);
@@ -499,15 +490,20 @@ class Scenario {
   }
 
   dnaInput(dnaTextArea, text) {
+    const start = dnaTextArea.selectionStart;
+    const end = dnaTextArea.selectionEnd;
     const upper = text.toUpperCase();
     const notAllowed = /[^FLRPBC]/g;
-    dnaTextArea.setRangeText(upper.replace(notAllowed, ""));
+    dnaTextArea.setRangeText(upper.replace(notAllowed, ""), start, end, 'end');
     this.dna = dnaTextArea.value;
     this.store('dna', this.dna.toLowerCase());
   }
 
   dnaButton(dnaTextArea, letter) {
-    dnaTextArea.setRangeText(letter);
+    const start = dnaTextArea.selectionStart;
+    const end = dnaTextArea.selectionEnd;
+    dnaTextArea.setRangeText(letter, start, end, 'end');
+    this.dna = dnaTextArea.value;
     this.store('dna', this.dna.toLowerCase());
   }
 
@@ -526,7 +522,7 @@ class Scenario {
   setSpeed(speed) {
     const parsedSpeed = parseInt(speed);
     if (!Number.isNaN(parsedSpeed)) {
-      this.speed = Math.min(3, Math.max(-4, parsed));
+      this.speed = Math.min(3, Math.max(-4, parsedSpeed));
     }
     this.store('speed', this.speed.toString());
   }
@@ -550,262 +546,136 @@ class Scenario {
   }
 }
 
-function main() {
-  const urlParams  = new URLSearchParams(window.location.search);
+document.addEventListener('DOMContentLoaded', (e) => {
+  const seaCanvas   = document.getElementById('sea');
+  const turtlesOut  = document.getElementById('turtles');
+  const stepsOut    = document.getElementById('steps');
+  const birthsOut   = document.getElementById('births');
+  const dnaTextArea = document.getElementById('dna');
+  const ctrlH2      = document.getElementById('ctrl');
+  const speedRange  = document.getElementById('speed');
+  const restartBtn  = document.getElementById('restart');
+  const pauseBtn    = document.getElementById('pause');
+  const speedModal  = document.getElementById('speed-modal');
+  const delBtn      = document.getElementById('delete');
+  const forwardBtn  = document.getElementById('forward');
+  const leftBtn     = document.getElementById('left');
+  const rightBtn    = document.getElementById('right');
+  const poopBtn     = document.getElementById('poop');
+  const babyBtn     = document.getElementById('baby');
+  const cleanBtn    = document.getElementById('clean');
+  const biggerBtn   = document.getElementById('bigger');
+  const smallerBtn  = document.getElementById('smaller');
 
-  const seaCanvas  = document.getElementById("sea");
-  const turtlesOut = document.getElementById("turtles");
-  const stepsOut   = document.getElementById("steps");
-  const birthsOut  = document.getElementById("births");
-  const dnaTextbox = document.getElementById("dna");
+  const scenario = new Scenario(dnaTextArea, speedRange);
+  const sim = new Simulation(scenario.dna, scenario.scale, seaCanvas);
+  const playback = new Playback(sim, scenario.speed);
 
-  const ctrlH2 = document.getElementById("ctrl");
-  const speedRange = document.getElementById("speed");
-  //const scaleRange = document.getElementById("scale");
-  const restartBtn = document.getElementById("restart");
-  const pauseBtn   = document.getElementById("pause");
-  //const fasterBtn  = document.getElementById("faster");
-  //const slowerBtn  = document.getElementById("slower");
-  const speedModal = document.getElementById("speed-modal");
-  //const scaleModal = document.getElementById("scale-modal");
-  const forwardBtn = document.getElementById("forward");
-  const leftBtn    = document.getElementById("left");
-  const rightBtn   = document.getElementById("right");
-  const poopBtn    = document.getElementById("poop");
-  const babyBtn    = document.getElementById("baby");
-  const delBtn     = document.getElementById("delete");
-  const cleanBtn   = document.getElementById("clean");
-  const biggerBtn  = document.getElementById("bigger");
-  const smallerBtn = document.getElementById("smaller");
-
-  const notAllowed = /[^FLRPBC]/g;
-
-  let dna = dnaTextbox.value;
-  if (urlParams.has('dna')) {
-    const upper = urlParams.get('dna').toUpperCase();
-    const filtered = upper.replace(notAllowed, "");
-    dnaTextbox.value = filtered;
-    dna = filtered;
-    if (dna.toLowerCase() !== urlParams.get('dna')) {
-      urlParams.set('dna', dna.toLowerCase());
-      window.history.replaceState(
-        {},
-        '',
-        `${window.location.pathname}?${urlParams}`
-      );
-    }
-  }
-
-  let scale = 6;
-  if (urlParams.has('scale')) {
-    const parsed = parseInt(urlParams.get('scale'));
-    if (!Number.isNaN(parsed)) {
-      scale = Math.min(10, Math.max(2, parsed));
-      if (scale.toString() !== urlParams.get('scale')) {
-        urlParams.set('scale', scale.toString());
-        window.history.replaceState(
-          {},
-          '',
-          `${window.location.pathname}?${urlParams}`
-        );
-      }
-    }
-  }
-
-  const sim = new Simulation(dna, scale, seaCanvas);
-
+  const speeds = ['0\u00D7', '\u215B\u00D7', '\u00BC\u00D7', '\u00BD\u00D7',
+                  '1\u00D7', '2\u00D7', '4\u00D7', '8\u00D7'];
   const updateUI = () => {
     sim.draw();
     turtlesOut.value = sim.turtles;
     stepsOut.value = sim.steps;
     birthsOut.value = sim.births;
+    pauseBtn.textContent = playback.pause ? '\u25B6\uFE0E' : '\u23F8\uFE0E';
+    speedModal.textContent = speeds[scenario.speed + 4];
   };
+  playback.updateUI = updateUI;
 
-  const playback = new Playback(sim, 0, updateUI, pauseBtn);
-
-  let speedMode = false;
-  //let scaleMode = false;
-  speedModal.addEventListener("click", () => {
-    if (speedMode) {
-      ctrlH2.style.display = "inline-grid";
-      speedRange.style.display = "none";
-      //speedModal.style.color = "";
-      speedMode = false;
-    } else {
-      ctrlH2.style.display = "none";
-      //scaleRange.style.display = "none";
-      //scaleModal.style.color = "";
-      speedRange.style.display = "inline-grid";
-      //speedModal.style.color = "red";
-      //scaleMode = false;
-      speedMode = true;
-    }
-  });
-
-  const speeds = ["0\u00D7", "\u215B\u00D7", "\u00BC\u00D7", "\u00BD\u00D7", "1\u00D7", "2\u00D7", "4\u00D7", "8\u00D7"];
-  speedRange.addEventListener("input", () => {
-    const speed = parseInt(speedRange.value);
-    speedModal.textContent = speeds[speed + 4];
-    playback.setSpeed(speed);
-  });
-
-  /*
-    scaleModal.addEventListener("click", () => {
-    if (scaleMode) {
-    ctrlH2.style.display = "inline-grid";
-    scaleRange.style.display = "none";
-    scaleModal.style.color = "";
-    scaleMode = false;
-    } else {
-    ctrlH2.style.display = "none";
-    speedRange.style.display = "none";
-    speedModal.style.color = "";
-    scaleRange.style.display = "inline-grid";
-    scaleModal.style.color = "red";
-    speedMode = false;
-    scaleMode = true;
-    }
-    });
-
-    const scales = ["\u25A1\u00B2", "\u25A1\u00B3", "\u25A1\u2074", "\u25A1\u2075", "\u25A1\u2076", "\u25A1\u2077", "\u25A1\u2078", "\u25A1\u2079", "\u25A1\u00B9\u2070"];
-    scaleRange.addEventListener("input", () => {
-    const scaleSet = parseInt(scaleRange.value);
-    scaleModal.textContent = scales[scaleSet - 2];
-    if (scale === scaleSet) {
-    return;
-    }
-    scale = scaleSet;
-    sim.resetScale(scale);
-    updateUI();
-    playback.restart();
-    });
-  */
-
-  const dnaChange = () => {
-    if (dna === dnaTextbox.value) {
-      return;
-    }
-    dna = dnaTextbox.value;
-    sim.resetDNA(dna);
-    updateUI();
-    playback.restart();
-    if (urlParams.has('dna')) {
-      if (dna !== '') {
-        urlParams.set('dna', dna.toLowerCase());
-      } else {
-        urlParams.delete('dna');
-      }
-    } else if (dna !== '') {
-      urlParams.append('dna', dna.toLowerCase());
-    }
-    window.history.replaceState(
-      {},
-      '',
-      `${window.location.pathname}?${urlParams}`
-    );
-  };
-
-  dnaTextbox.addEventListener("input", () => {
-    const upper = dnaTextbox.value.toUpperCase();
-    const filtered = upper.replace(notAllowed, "");
-    if (dnaTextbox.value !== filtered) {
-      dnaTextbox.value = filtered;
-    }
-    dnaChange();
-  });
-
-  forwardBtn.addEventListener("click", () => {
-    dnaTextbox.value += "F";
-    dnaChange();
-  });
-  leftBtn.addEventListener("click", () => {
-    dnaTextbox.value += "L";
-    dnaChange();
-  });
-  rightBtn.addEventListener("click", () => {
-    dnaTextbox.value += "R";
-    dnaChange();
-  });
-  poopBtn.addEventListener("click", () => {
-    dnaTextbox.value += "P";
-    dnaChange();
-  });
-  babyBtn.addEventListener("click", () => {
-    dnaTextbox.value += "B";
-    dnaChange();
-  });
-  cleanBtn.addEventListener("click", () => {
-    dnaTextbox.value += "C";
-    dnaChange();
-  });
-  delBtn.addEventListener("click", () => {
-    if (dnaTextbox.selectionStart !== dnaTextbox.selectionEnd) {
-      dnaTextbox.setRangeText("");
-    } else {
-      dnaTextbox.value = dnaTextbox.value.slice(0, -1);
-    }
-    dnaChange();
-  });
-
-  biggerBtn.addEventListener("click", () => {
-    if (scale <= 2) {
-      return;
-    }
-    scale--;
-    sim.resetScale(scale);
-    updateUI();
-    playback.restart();
-    if (urlParams.has('scale')) {
-      urlParams.set('scale', scale.toString());
-    } else {
-      urlParams.append('scale', scale.toString());
-    }
-    window.history.replaceState(
-      {},
-      '',
-      `${window.location.pathname}?${urlParams}`
-    );
-  });
-  smallerBtn.addEventListener("click", () => {
-    if (scale >= 10) {
-      return;
-    }
-    scale++;
-    sim.resetScale(scale);
-    updateUI();
-    playback.restart();
-    if (urlParams.has('scale')) {
-      urlParams.set('scale', scale.toString());
-    } else {
-      urlParams.append('scale', scale.toString());
-    }
-    window.history.replaceState(
-      {},
-      '',
-      `${window.location.pathname}?${urlParams}`
-    );
-  });
-
-  restartBtn.addEventListener("click", () => {
+  restartBtn.addEventListener('click', (e) => {
     sim.reset();
     updateUI();
     playback.restart();
   });
 
-  pauseBtn.addEventListener("click", () => playback.playPause());
-  //fasterBtn.addEventListener("click", () => playback.faster());
-  //slowerBtn.addEventListener("click", () => playback.slower());
+  pauseBtn.addEventListener('click', (e) => {
+    playback.playPause();
+    updateUI();
+  });
+
+  let speedMode = speedRange.style.display !== 'none';
+  speedModal.addEventListener('click', (e) => {
+    if (speedMode) {
+      ctrlH2.style.display = 'inline-grid';
+      speedRange.style.display = 'none';
+      speedMode = false;
+    } else {
+      ctrlH2.style.display = 'none';
+      speedRange.style.display = 'inline-grid';
+      speedMode = true;
+    }
+  });
+
+  speedRange.addEventListener('input', (e) => {
+    scenario.setSpeed(speedRange.value);
+    playback.setSpeed(scenario.speed);
+    updateUI();
+  });
+
+  dnaTextArea.addEventListener('beforeinput', (e) => {
+    switch (e.inputType) {
+    case 'insertText':
+      break;
+    case 'insertFromPaste':
+      break;
+    default:
+      return;
+    }
+    if (!e.data) {
+      return;
+    }
+    e.preventDefault();
+    scenario.dnaInput(dnaTextArea, e.data);
+    sim.resetDNA(scenario.dna);
+    updateUI();
+    playback.restart();
+  });
+
+  dnaTextArea.addEventListener('input', (e) => {
+    scenario.dna = dnaTextArea.value;
+    scenario.store('dna', scenario.dna.toLowerCase());
+    sim.resetDNA(scenario.dna);
+    updateUI();
+    playback.restart();
+  });
+
+  const dnaButton = (letter) => {
+    if (letter === '') {
+      scenario.dnaDelete(dnaTextArea);
+    } else {
+      scenario.dnaButton(dnaTextArea, letter);
+    }
+    sim.resetDNA(scenario.dna);
+    updateUI();
+    playback.restart();
+    // TODO: do we need to return focus to the dnaTextArea?
+  };
+  delBtn.addEventListener('click', (e) => dnaButton(''));
+  forwardBtn.addEventListener('click', (e) => dnaButton('F'));
+  leftBtn.addEventListener('click', (e) => dnaButton('L'));
+  rightBtn.addEventListener('click', (e) => dnaButton('R'));
+  babyBtn.addEventListener('click', (e) => dnaButton('B'));
+  poopBtn.addEventListener('click', (e) => dnaButton('P'));
+  cleanBtn.addEventListener('click', (e) => dnaButton('C'));
+
+  biggerBtn.addEventListener('click', (e) => {
+    if (scenario.bigger()) {
+      sim.resetScale(scenario.scale);
+      updateUI();
+      playback.restart();
+    }
+  });
+  smallerBtn.addEventListener('click', (e) => {
+    if (scenario.smaller()) {
+      sim.resetScale(scenario.scale);
+      updateUI();
+      playback.restart();
+    }
+  });
 
   playback.restart();
-
-  // instead of state changes calling into UI code, we want:
-  // 1. a. initialize model state from URL or other stuff
-  //    b. ask UI to redraw itself
-  // 2. a. buttons -> change model state
-  //    b. and then ask UI to redraw itself, it looks at whatever model state
-}
-
-document.addEventListener("DOMContentLoaded", main)
+});
 
 // From Matilda: CLCLLRPRPFBFBLCLCRPRPFBFBRPLFBCPRLFBC
 // From Michael: FFFFFFFFFFFFFFFFFFFFFFPFFFFFFFFRBFFFB
