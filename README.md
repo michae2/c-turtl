@@ -16,7 +16,7 @@ consists of six different letters, which are each an instruction for the turtle:
 Each turtle follows the instructions in the DNA, performing one instruction at a
 time. Baby turtles start at the beginning of the DNA. When a turtle finishes all
 of the instructions in the DNA, it dies. The game always starts with one baby
-turtle in the middle of the ocean, facing East (right).
+turtle in the middle of the ocean, facing east (right).
 
 I'm not much of an artist, so the turtles look like this:
 

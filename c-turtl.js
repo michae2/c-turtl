@@ -1,19 +1,20 @@
 "use strict";
 
 // TODO:
-//   - fix H1 title
 //   - max size for controls? min size for controls?
-//   - instructions
 //   - fix on safari
 //   - from Cliff: show path of first turtle for debugging
 //   - move selection to end for buttons?
+//   - fix undo behavior in Safari (and Firefox?)
+//   - click twice on speed modal?
+//   - initial load empty DNA there's no turtle?
 
 // TurtleGeneration represents one cohort of sea turtles that are born during
 // the same step.  This cohort will never grow or shrink, and will always
-// execute the same DNA command at the same time, so we group them together for
-// better performance.  TurtleGeneration is a struct-of-arrays, meaning each
+// execute the same DNA instruction at the same time, so we group them together
+// for better performance.  TurtleGeneration is a struct-of-arrays, meaning each
 // individual turle is represented as an index within all of the arrays tracking
-// turtle attributes.
+// turtle attributes such as (x, y) position and direction.
 class TurtleGeneration {
   constructor(capacity) {
     this.length = 0;
@@ -168,7 +169,8 @@ class TurtleGeneration {
   poop(poopBuffer, size) {
     for (let i = 0; i < this.length; i++) {
       const j = this.x[i] + this.y[i] * size;
-      // Pooping makes the spot 20% darker.
+      // Pooping makes the spot 20% darker.  (This relies on the
+      // Uint8ClampedArray clamping behavior.)
       poopBuffer.data[j * 4 + 0] -= 0x33;
       poopBuffer.data[j * 4 + 1] -= 0x33;
       poopBuffer.data[j * 4 + 2] -= 0x33;
@@ -179,7 +181,8 @@ class TurtleGeneration {
     for (let i = 0; i < this.length; i++) {
       const j = this.x[i] + this.y[i] * size;
       // Cleaning makes the spot 33% lighter, but with some variation in red and
-      // blue depending on direction to give a nice rainbow effect.
+      // blue depending on direction to give a nice rainbow effect.  (This
+      // relies on the Uint8ClampedArray clamping behavior.)
       poopBuffer.data[j * 4 + 0] += 0x55 + 0x55 * this.dx[i];
       poopBuffer.data[j * 4 + 1] += 0x55;
       poopBuffer.data[j * 4 + 2] += 0x55 + 0x55 * this.dy[i];
@@ -192,41 +195,41 @@ class TurtleGeneration {
   // - and C color is hsl(210, 50%, 60%), or #6699cc, close to CornflowerBlue
   // - and B color is hsl(270, 50%, 60%), or #9966cc, close to MediumPurple
   // - and P color is hsl( 30, 50%, 60%), or #cc9966, close to Peru
-  static #turtleStyles = {
+  static #turtleStyles = Object.freeze({
     F: [
-      "#99cc66", "#7fcc66", "#66cc66",
-      "#7fcc66", "#66cc66", "#66cc7f",
-      "#66cc66", "#66cc7f", "#66cc99"
+      '#99cc66', '#7fcc66', '#66cc66',
+      '#7fcc66', '#66cc66', '#66cc7f',
+      '#66cc66', '#66cc7f', '#66cc99'
     ],
     L: [
-      "#99cc66", "#7fcc66", "#66cc66",
-      "#7fcc66", "#66cc66", "#66cc7f",
-      "#66cc66", "#66cc7f", "#66cc99"
+      '#99cc66', '#7fcc66', '#66cc66',
+      '#7fcc66', '#66cc66', '#66cc7f',
+      '#66cc66', '#66cc7f', '#66cc99'
     ],
     R: [
-      "#99cc66", "#7fcc66", "#66cc66",
-      "#7fcc66", "#66cc66", "#66cc7f",
-      "#66cc66", "#66cc7f", "#66cc99"
+      '#99cc66', '#7fcc66', '#66cc66',
+      '#7fcc66', '#66cc66', '#66cc7f',
+      '#66cc66', '#66cc7f', '#66cc99'
     ],
     C: [
-      "#6699cc", "#6699cc", "#6699cc",
-      "#6699cc", "#6699cc", "#6699cc",
-      "#6699cc", "#6699cc", "#6699cc"
+      '#6699cc', '#6699cc', '#6699cc',
+      '#6699cc', '#6699cc', '#6699cc',
+      '#6699cc', '#6699cc', '#6699cc'
     ],
     B: [
-      "#9966cc", "#9966cc", "#9966cc",
-      "#9966cc", "#9966cc", "#9966cc",
-      "#9966cc", "#9966cc", "#9966cc"
+      '#9966cc', '#9966cc', '#9966cc',
+      '#9966cc', '#9966cc', '#9966cc',
+      '#9966cc', '#9966cc', '#9966cc'
     ],
     P: [
-      "#cc9966", "#cc9966", "#cc9966",
-      "#cc9966", "#cc9966", "#cc9966",
-      "#cc9966", "#cc9966", "#cc9966"
+      '#cc9966', '#cc9966', '#cc9966',
+      '#cc9966', '#cc9966', '#cc9966',
+      '#cc9966', '#cc9966', '#cc9966'
     ],
-  };
+  });
 
-  draw(ctx, cmd) {
-    const fillStyle = TurtleGeneration.#turtleStyles[cmd];
+  draw(ctx, ins) {
+    const fillStyle = TurtleGeneration.#turtleStyles[ins];
     for (let i = 0; i < this.length; i++) {
       ctx.fillStyle = fillStyle[(this.dx[i] + 1) + (this.dy[i] + 1) * 3];
       ctx.fillRect(this.x[i], this.y[i], 1, 1);
@@ -236,7 +239,7 @@ class TurtleGeneration {
 
 // Simulation is a singleton class that holds all of the sea turtle generations
 // and their positions within the DNA program.  Simulation also applies DNA
-// commands to each sea turtle generation, tracks some stats, and handles
+// instructions to each sea turtle generation, tracks some stats, and handles
 // drawing the turtles and poop to the canvas.
 class Simulation {
   constructor(dna, scale, canvas) {
@@ -248,6 +251,8 @@ class Simulation {
       this.turtleGens[g] = new TurtleGeneration(defaultTurtleGenSize);
     }
     this.babyG = this.turtleGens.length - 1;
+    // babySet keeps track of births, so that we never repeat the exact same
+    // birth twice.  This ensures that the simulation eventually ends.
     const babySetLen = 1 << scale << scale;
     this.babySet = new Uint8Array(babySetLen);
     this.steps = 0;
@@ -312,9 +317,9 @@ class Simulation {
   }
 
   step() {
-    // Logically move all turtle generations forward to the next DNA command,
-    // including the baby generation, by moving the baby generation position
-    // backward to point at the oldest generation, which dies and is
+    // Logically move all turtle generations forward to the next DNA
+    // instruction, including the baby generation, by moving the baby generation
+    // position backward to point at the oldest generation, which dies and is
     // reincarnated as babies.
     this.babyG--;
     if (this.babyG < 0) {
@@ -324,7 +329,7 @@ class Simulation {
     // Reset the newly-reincarnated baby generation.
     this.turtles -= babyGen.length;
     babyGen.reset();
-    // Perform the next DNA command for all turtle generations.
+    // Perform the next DNA instruction for all turtle generations.
     for (let i = 0; i < this.dna.length; i++) {
       const g = (this.babyG + 1 + i) % this.turtleGens.length;
       switch (this.dna[i]) {
@@ -420,6 +425,8 @@ class Playback {
     // Discover the frameMS for this system.
     this.frameMS = 0.9 * this.frameMS + 0.1 * elapsed;
 
+    // If speed is -4 we enter a special debugging mode ("0x") in which each
+    // click of the play button advances the simulation one step.
     if (this.speed < -3) {
       this.sim.step();
       this.running = false;
@@ -445,7 +452,9 @@ class Playback {
   }
 }
 
-// Scenario
+// Scenario is a singleton class that holds the state defining each possible
+// game scenario.  This state is persisted in the URL query string, and Scenario
+// is responsible for loading state from and storing state to the URL.
 // TODO: add pause
 class Scenario {
   constructor(dnaTextArea, speedRange) {
@@ -512,6 +521,7 @@ class Scenario {
     const start = dnaTextArea.selectionStart;
     const end = dnaTextArea.selectionEnd;
     if (start === end) {
+      // TODO: this doesn't work at beginning, fix
       dnaTextArea.setRangeText("", start - 1, end, 'start');
     } else {
       dnaTextArea.setRangeText("");
@@ -547,7 +557,8 @@ class Scenario {
   }
 }
 
-document.addEventListener('DOMContentLoaded', (e) => {
+document.addEventListener('DOMContentLoaded', () => {
+  const h1          = document.querySelector('h1');
   const seaCanvas   = document.getElementById('sea');
   const turtlesOut  = document.getElementById('turtles');
   const stepsOut    = document.getElementById('steps');
@@ -583,22 +594,27 @@ document.addEventListener('DOMContentLoaded', (e) => {
     birthsOut.value = sim.births;
     pauseSpan.textContent = playback.pause ? '\u25B6\uFE0E' : '\u23F8\uFE0E';
     speedSpan.textContent = speeds[scenario.speed + 4];
+    if (!playback.running && scenario.dna === '') {
+      h1.style.zIndex = 2;
+    } else {
+      h1.style.zIndex = 0;
+    }
   };
   playback.updateUI = updateUI;
 
-  restartBtn.addEventListener('click', (e) => {
+  restartBtn.addEventListener('click', () => {
     sim.reset();
     updateUI();
     playback.restart();
   });
 
-  pauseBtn.addEventListener('click', (e) => {
+  pauseBtn.addEventListener('click', () => {
     playback.playPause();
     updateUI();
   });
 
   let speedMode = speedRange.style.display !== 'none';
-  speedModal.addEventListener('click', (e) => {
+  speedModal.addEventListener('click', () => {
     if (speedMode) {
       ctrlH2.style.display = 'inline-grid';
       speedRange.style.display = 'none';
@@ -610,12 +626,13 @@ document.addEventListener('DOMContentLoaded', (e) => {
     }
   });
 
-  speedRange.addEventListener('input', (e) => {
+  speedRange.addEventListener('input', () => {
     scenario.setSpeed(speedRange.value);
     playback.setSpeed(scenario.speed);
     updateUI();
   });
 
+  // TODO: still not confident this is right
   dnaTextArea.addEventListener('beforeinput', (e) => {
     switch (e.inputType) {
     case 'insertText':
@@ -635,7 +652,7 @@ document.addEventListener('DOMContentLoaded', (e) => {
     playback.restart();
   });
 
-  dnaTextArea.addEventListener('input', (e) => {
+  dnaTextArea.addEventListener('input', () => {
     scenario.dna = dnaTextArea.value;
     scenario.store('dna', scenario.dna.toLowerCase());
     sim.resetDNA(scenario.dna);
@@ -644,6 +661,7 @@ document.addEventListener('DOMContentLoaded', (e) => {
   });
 
   const dnaButton = (letter) => {
+    // TODO: move selection to end of dnaTextArea?
     if (letter === '') {
       scenario.dnaDelete(dnaTextArea);
     } else {
@@ -654,15 +672,15 @@ document.addEventListener('DOMContentLoaded', (e) => {
     playback.restart();
     // TODO: do we need to return focus to the dnaTextArea?
   };
-  delBtn.addEventListener(    'click', (e) => dnaButton(''));
-  forwardBtn.addEventListener('click', (e) => dnaButton('F'));
-  leftBtn.addEventListener(   'click', (e) => dnaButton('L'));
-  rightBtn.addEventListener(  'click', (e) => dnaButton('R'));
-  babyBtn.addEventListener(   'click', (e) => dnaButton('B'));
-  poopBtn.addEventListener(   'click', (e) => dnaButton('P'));
-  cleanBtn.addEventListener(  'click', (e) => dnaButton('C'));
+  delBtn.addEventListener('click', () => dnaButton(''));
+  forwardBtn.addEventListener('click', () => dnaButton('F'));
+  leftBtn.addEventListener('click', () => dnaButton('L'));
+  rightBtn.addEventListener('click', () => dnaButton('R'));
+  babyBtn.addEventListener('click', () => dnaButton('B'));
+  poopBtn.addEventListener('click', () => dnaButton('P'));
+  cleanBtn.addEventListener('click', () => dnaButton('C'));
 
-  biggerBtn.addEventListener('click', (e) => {
+  biggerBtn.addEventListener('click', () => {
     if (scenario.bigger()) {
       sim.resetScale(scenario.scale);
       updateUI();
@@ -673,7 +691,7 @@ document.addEventListener('DOMContentLoaded', (e) => {
       biggerBtn.disabled = true;
     }
   });
-  smallerBtn.addEventListener('click', (e) => {
+  smallerBtn.addEventListener('click', () => {
     if (scenario.smaller()) {
       sim.resetScale(scenario.scale);
       updateUI();
@@ -701,4 +719,3 @@ document.addEventListener('DOMContentLoaded', (e) => {
 // FPFPLFPFPBRRRRFFLLFPFPBC
 // FCPPPFPPPCBRRRFFFPFPFPFPFPFPFPFFPRBCRRFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFRPFFFFFFFFFFFFBC
 // RPBFPRFPFFFFFFFFPFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFPBC
-

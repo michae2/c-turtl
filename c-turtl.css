@@ -2,7 +2,7 @@ body {
   margin: 1vmin;
 }
 
-main {
+#appgrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 10vmin);
   grid-auto-rows: 10vmin;
@@ -13,8 +13,12 @@ main {
 h1 {
   position: absolute;
   margin: 0px;
+  margin-top: 40vmin;
   font-size: 5vmin;
   padding: 1vmin;
+  width: 96vmin;
+  text-align: center;
+  z-index: 2;
 }
 
 section {
@@ -32,8 +36,8 @@ section {
   grid-column: span 9;
   grid-row: span 9;
   display: grid;
-  grid-template-columns: repeat(auto-fill, 128px);
-  grid-template-rows: repeat(auto-fill, 128px);
+  grid-template-columns: repeat(auto-fill, 64px);
+  grid-template-rows: repeat(auto-fill, 64px);
   overflow: auto;
   background: lightgray;
 }
@@ -106,4 +110,13 @@ button span {
   grid-column: span 4;
   grid-row: span 1;
   display: none;
+}
+
+article {
+  width: 98vmin;
+  margin-top: 1vmin;
+}
+
+ul {
+  list-style-type: none;
 }
