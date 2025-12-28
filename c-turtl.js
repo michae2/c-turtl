@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 // TODO:
 //   - max size for controls? min size for controls?
@@ -6,8 +6,7 @@
 //   - from Cliff: show path of first turtle for debugging
 //   - move selection to end for buttons?
 //   - fix undo behavior in Safari (and Firefox?)
-//   - click twice on speed modal?
-//   - initial load empty DNA there's no turtle?
+//   - rewrite text a bit
 
 // TurtleGeneration represents one cohort of sea turtles that are born during
 // the same step.  This cohort will never grow or shrink, and will always
@@ -16,12 +15,15 @@
 // individual turle is represented as an index within all of the arrays tracking
 // turtle attributes such as (x, y) position and direction.
 class TurtleGeneration {
+  static MIN_CAPACITY = 16;
+
   constructor(capacity) {
+    const cap = Math.max(TurtleGeneration.MIN_CAPACITY, capacity);
     this.length = 0;
-    this.x = new Int32Array(capacity);
-    this.y = new Int32Array(capacity);
-    this.dx = new Int32Array(capacity);
-    this.dy = new Int32Array(capacity);
+    this.x = new Int32Array(cap);
+    this.y = new Int32Array(cap);
+    this.dx = new Int32Array(cap);
+    this.dy = new Int32Array(cap);
   }
 
   reset() {
@@ -246,9 +248,9 @@ class Simulation {
     this.dna = dna;
     this.size = 1 << scale;
     this.turtleGens = new Array(this.dna.length + 1);
-    const defaultTurtleGenSize = Math.max(16, this.size);
+    const defaultTurtleGenCapacity = this.size;
     for (let g = 0; g < this.turtleGens.length; g++) {
-      this.turtleGens[g] = new TurtleGeneration(defaultTurtleGenSize);
+      this.turtleGens[g] = new TurtleGeneration(defaultTurtleGenCapacity);
     }
     this.babyG = this.turtleGens.length - 1;
     // babySet keeps track of births, so that we never repeat the exact same
@@ -292,7 +294,7 @@ class Simulation {
 
   resetDNA(dna) {
     this.dna = dna;
-    const defaultTurtleGenSize = Math.max(16, this.size);
+    const defaultTurtleGenSize = this.size;
     while (this.turtleGens.length < this.dna.length + 1) {
       this.turtleGens.push(new TurtleGeneration(defaultTurtleGenSize));
     }
@@ -371,103 +373,40 @@ class Simulation {
   }
 }
 
-// Playback is a singleton class that holds the state for the animation loop.
-class Playback {
-  constructor(sim, speed) {
-    this.sim = sim;
-    this.speed = speed;
-    // stepMS is the target duration of one step, with speed 0 having a target
-    // duration of 16 ms.
-    this.stepMS = 2 ** -this.speed * 16;
-    // frameMS is the minimum time between requestAnimationFrame callbacks for
-    // this system.  We have to discover it as we run the game loop, since we
-    // don't know the framerate of this system, so we start with something high
-    // and then lower it.
-    this.frameMS = 33;
-    this.accumulator = 0;
-    // pause is whether a pause has been requested.
-    this.pause = false;
-    // running is whether there is an animate call scheduled.
-    this.running = false;
-    this.updateUI = () => {};
-  }
-
-  // restart schedules the first call to animate if it is not currently
-  // scheduled.  (If playback is paused, restart does nothing.)
-  restart() {
-    if (!this.pause && !this.running) {
-      this.running = true;
-      this.accumulator = 0;
-      requestAnimationFrame(time => this.animate(time, time - this.stepMS));
-    }
-  }
-
-  playPause() {
-    this.pause = !this.pause;
-    this.restart();
-  }
-
-  setSpeed(speed) {
-    this.speed = speed;
-    this.stepMS = 2 ** -this.speed * 16;
-  }
-
-  // animate is the animation loop, or game loop.  It is scheduled once per
-  // frame while playback is running.
-  animate(curTime, prevTime) {
-    if (this.sim.turtles < 1 || this.pause) {
-      this.running = false;
-      this.updateUI();
-      return;
-    }
-    let elapsed = curTime - prevTime;
-    this.accumulator += elapsed;
-    // Discover the frameMS for this system.
-    this.frameMS = 0.9 * this.frameMS + 0.1 * elapsed;
-
-    // If speed is -4 we enter a special debugging mode ("0x") in which each
-    // click of the play button advances the simulation one step.
-    if (this.speed < -3) {
-      this.sim.step();
-      this.running = false;
-      this.pause = true;
-      this.updateUI();
-      return;
-    }
-
-    const budget = this.frameMS - 2;
-    const loopStart = performance.now();
-    while (this.accumulator >= this.stepMS) {
-      this.sim.step();
-      this.accumulator -= this.stepMS;
-      // Bound the amount of work we do in case there was a long delay between
-      // callbacks or we spent too long updating the simulation.
-      if (performance.now() - loopStart > budget) {
-        this.accumulator = 0;
-        break;
-      }
-    }
-    this.updateUI();
-    requestAnimationFrame(time => this.animate(time, curTime));
-  }
-}
-
 // Scenario is a singleton class that holds the state defining each possible
 // game scenario.  This state is persisted in the URL query string, and Scenario
-// is responsible for loading state from and storing state to the URL.
-// TODO: add pause
+// is responsible for loading from and storing to the URL.
 class Scenario {
+  static MIN_SCALE = 2;
+  static MAX_SCALE = 10;
+  static DEFAULT_SCALE = 6;
+  static MIN_SPEED = -4;
+  static MAX_SPEED = 3;
+  static DEFAULT_SPEED = 0;
+
   constructor(dnaTextArea, speedRange) {
     this.params = new URLSearchParams(window.location.search);
 
     this.dna = dnaTextArea.value;
-    // validate the DNA here?
     if (this.params.has('dna')) {
-      const upper = this.params.get('dna').toUpperCase();
-      const notAllowed = /[^FLRPBC]/g;
-      this.dna = upper.replace(notAllowed, "");
+      this.dna = this.params.get('dna')
+    }
+    this.dna = this.dna.toUpperCase();
+    const notAllowed = /[^FLRPBC]/g;
+    this.dna = this.dna.replace(notAllowed, '');
+    dnaTextArea.value = this.dna;
+    if (this.params.has('dna')) {
       this.store('dna', this.dna.toLowerCase());
-      dnaTextArea.value = this.dna;
+    }
+
+    this.scale = Scenario.DEFAULT_SCALE;
+    if (this.params.has('scale')) {
+      const parsedScale = parseInt(this.params.get('scale'));
+      if (!Number.isNaN(parsedScale)) {
+        this.scale = Math.max(Scenario.MIN_SCALE, parsedScale);
+        this.scale = Math.min(Scenario.MAX_SCALE, this.scale);
+      }
+      this.store('scale', this.scale.toString());
     }
 
     this.speed = parseInt(speedRange.value);
@@ -476,13 +415,9 @@ class Scenario {
       speedRange.value = this.speed.toString();
     }
 
-    this.scale = 6;
-    if (this.params.has('scale')) {
-      const parsedScale = parseInt(this.params.get('scale'));
-      if (!Number.isNaN(parsedScale)) {
-        this.scale = Math.min(10, Math.max(2, parsedScale));
-      }
-      this.store('scale', this.scale.toString());
+    this.pause = false;
+    if (this.params.has('pause')) {
+      this.playPause(this.params.get('pause') === '1');
     }
   }
 
@@ -496,7 +431,7 @@ class Scenario {
       this.params.append(param, value);
     }
     const url = `${window.location.pathname}?${this.params}`;
-    window.history.replaceState({}, "", url);
+    window.history.replaceState({}, '', url);
   }
 
   dnaInput(dnaTextArea, text) {
@@ -504,7 +439,7 @@ class Scenario {
     const end = dnaTextArea.selectionEnd;
     const upper = text.toUpperCase();
     const notAllowed = /[^FLRPBC]/g;
-    dnaTextArea.setRangeText(upper.replace(notAllowed, ""), start, end, 'end');
+    dnaTextArea.setRangeText(upper.replace(notAllowed, ''), start, end, 'end');
     this.dna = dnaTextArea.value;
     this.store('dna', this.dna.toLowerCase());
   }
@@ -522,24 +457,16 @@ class Scenario {
     const end = dnaTextArea.selectionEnd;
     if (start === end) {
       // TODO: this doesn't work at beginning, fix
-      dnaTextArea.setRangeText("", start - 1, end, 'start');
+      dnaTextArea.setRangeText('', start - 1, end, 'start');
     } else {
-      dnaTextArea.setRangeText("");
+      dnaTextArea.setRangeText('');
     }
     this.dna = dnaTextArea.value;
     this.store('dna', this.dna.toLowerCase());
   }
 
-  setSpeed(speed) {
-    const parsedSpeed = parseInt(speed);
-    if (!Number.isNaN(parsedSpeed)) {
-      this.speed = Math.min(3, Math.max(-4, parsedSpeed));
-    }
-    this.store('speed', this.speed.toString());
-  }
-
-  bigger() {
-    if (this.scale <= 2) {
+  zoomIn() {
+    if (this.scale <= Scenario.MIN_SCALE) {
       return false;
     }
     this.scale--;
@@ -547,13 +474,101 @@ class Scenario {
     return true;
   }
 
-  smaller() {
-    if (this.scale >= 10) {
+  zoomOut() {
+    if (this.scale >= Scenario.MAX_SCALE) {
       return false;
     }
     this.scale++;
     this.store('scale', this.scale.toString());
     return true;
+  }
+
+  setSpeed(speed) {
+    const parsedSpeed = parseInt(speed);
+    if (!Number.isNaN(parsedSpeed)) {
+      this.speed = Math.max(Scenario.MIN_SPEED, parsedSpeed);
+      this.speed = Math.min(Scenario.MAX_SPEED, this.speed);
+    }
+    this.store('speed', this.speed.toString());
+  }
+
+  playPause(pause) {
+    this.pause = pause;
+    this.store('pause', this.pause ? '1' : '0');
+  }
+}
+
+// Playback is a singleton class that holds the state for the animation loop.
+class Playback {
+  static DEFAULT_FRAME_MS = 33;
+  static SPEED_0_TARGET_MS = 16;
+  static BUDGET_OVERHEAD_MS = 2;
+
+  constructor(scenario, sim) {
+    this.scenario = scenario;
+    this.sim = sim;
+    // frameMS is the minimum time between requestAnimationFrame callbacks for
+    // this system.  We have to discover it as we run the game loop, since we
+    // don't know the framerate of this system, so we start with something high
+    // and then lower it.
+    this.frameMS = Playback.DEFAULT_FRAME_MS;
+    this.accumulator = 0;
+    // running is whether there is an animate call scheduled.
+    this.running = false;
+    this.updateUI = () => {};
+  }
+
+  // restart schedules the first call to animate if it is not currently
+  // scheduled.  (If playback is paused, restart does nothing.)
+  restart() {
+    if (!this.scenario.pause && !this.running) {
+      this.running = true;
+      this.accumulator = 0;
+      const stepMS = 2 ** -this.scenario.speed * Playback.SPEED_0_TARGET_MS;
+      requestAnimationFrame(time => this.animate(time, time - stepMS));
+    }
+  }
+
+  // animate is the animation loop, or game loop.  It is scheduled once per
+  // frame while playback is running.
+  animate(curTime, prevTime) {
+    if (this.scenario.pause || this.sim.turtles < 1) {
+      this.running = false;
+      this.updateUI();
+      return;
+    }
+    let elapsed = Math.max(0, curTime - prevTime);
+    this.accumulator += elapsed;
+    // Discover the frameMS for this system.
+    this.frameMS = 0.9 * this.frameMS + 0.1 * elapsed;
+
+    // At the minimum speed we enter a special debugging mode ("0x") in which
+    // each click of the play button advances the simulation one step.
+    if (this.scenario.speed <= Scenario.MIN_SPEED) {
+      this.sim.step();
+      this.running = false;
+      this.scenario.playPause(true);
+      this.updateUI();
+      return;
+    }
+
+    // stepMS is the target duration of one step.
+    const stepMS = 2 ** -this.scenario.speed * Playback.SPEED_0_TARGET_MS;
+
+    const budget = Math.max(this.frameMS - Playback.BUDGET_OVERHEAD_MS, 0);
+    const loopStart = performance.now();
+    while (this.accumulator >= stepMS) {
+      this.sim.step();
+      this.accumulator -= stepMS;
+      // Bound the amount of work we do in case there was a long delay between
+      // callbacks or we spent too long updating the simulation.
+      if (performance.now() - loopStart > budget) {
+        this.accumulator = 0;
+        break;
+      }
+    }
+    this.updateUI();
+    requestAnimationFrame(time => this.animate(time, curTime));
   }
 }
 
@@ -583,7 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const scenario = new Scenario(dnaTextArea, speedRange);
   const sim      = new Simulation(scenario.dna, scenario.scale, seaCanvas);
-  const playback = new Playback(sim, scenario.speed);
+  const playback = new Playback(scenario, sim);
 
   const speeds = ['0\u00D7', '\u215B\u00D7', '\u00BC\u00D7', '\u00BD\u00D7',
                   '1\u00D7', '2\u00D7', '4\u00D7', '8\u00D7'];
@@ -592,13 +607,15 @@ document.addEventListener('DOMContentLoaded', () => {
     turtlesOut.value = sim.turtles;
     stepsOut.value = sim.steps;
     birthsOut.value = sim.births;
-    pauseSpan.textContent = playback.pause ? '\u25B6\uFE0E' : '\u23F8\uFE0E';
-    speedSpan.textContent = speeds[scenario.speed + 4];
+    pauseSpan.textContent = scenario.pause ? '\u25B6\uFE0E' : '\u23F8\uFE0E';
+    speedSpan.textContent = speeds[scenario.speed - Scenario.MIN_SPEED];
     if (!playback.running && scenario.dna === '') {
       h1.style.zIndex = 2;
     } else {
       h1.style.zIndex = 0;
     }
+    biggerBtn.disabled = scenario.scale <= Scenario.MIN_SCALE;
+    smallerBtn.disabled = scenario.scale >= Scenario.MAX_SCALE;
   };
   playback.updateUI = updateUI;
 
@@ -609,11 +626,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   pauseBtn.addEventListener('click', () => {
-    playback.playPause();
+    scenario.playPause(!scenario.pause);
     updateUI();
+    playback.restart();
   });
 
-  let speedMode = speedRange.style.display !== 'none';
+  let speedMode = false;
   speedModal.addEventListener('click', () => {
     if (speedMode) {
       ctrlH2.style.display = 'inline-grid';
@@ -628,7 +646,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   speedRange.addEventListener('input', () => {
     scenario.setSpeed(speedRange.value);
-    playback.setSpeed(scenario.speed);
     updateUI();
   });
 
@@ -681,28 +698,21 @@ document.addEventListener('DOMContentLoaded', () => {
   cleanBtn.addEventListener('click', () => dnaButton('C'));
 
   biggerBtn.addEventListener('click', () => {
-    if (scenario.bigger()) {
+    if (scenario.zoomIn()) {
       sim.resetScale(scenario.scale);
       updateUI();
-      smallerBtn.disabled = false;
       playback.restart();
-    }
-    if (scenario.scale <= 2) {
-      biggerBtn.disabled = true;
     }
   });
   smallerBtn.addEventListener('click', () => {
-    if (scenario.smaller()) {
+    if (scenario.zoomOut()) {
       sim.resetScale(scenario.scale);
       updateUI();
-      biggerBtn.disabled = false;
       playback.restart();
-    }
-    if (scenario.scale >= 10) {
-      smallerBtn.disabled = true;
     }
   });
 
+  updateUI();
   playback.restart();
 });
 
