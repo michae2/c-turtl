@@ -2,10 +2,7 @@
 
 // TODO:
 //   - max size for controls? min size for controls?
-//   - fix on safari
 //   - from Cliff: show path of first turtle for debugging
-//   - move selection to end for buttons?
-//   - fix undo behavior in Safari (and Firefox?)
 //   - rewrite text a bit
 
 // TurtleGeneration represents one cohort of sea turtles that are born during
@@ -244,8 +241,10 @@ class TurtleGeneration {
 // instructions to each sea turtle generation, tracks some stats, and handles
 // drawing the turtles and poop to the canvas.
 class Simulation {
+  static INVALID = /[^FLRBPC]/g;
+
   constructor(dna, scale, canvas) {
-    this.dna = dna;
+    this.dna = dna.replaceAll(Simulation.INVALID, '');
     this.size = 1 << scale;
     this.turtleGens = new Array(this.dna.length + 1);
     const defaultTurtleGenCapacity = this.size;
@@ -293,7 +292,7 @@ class Simulation {
   }
 
   resetDNA(dna) {
-    this.dna = dna;
+    this.dna = dna.replaceAll(Simulation.INVALID, '');
     const defaultTurtleGenSize = this.size;
     while (this.turtleGens.length < this.dna.length + 1) {
       this.turtleGens.push(new TurtleGeneration(defaultTurtleGenSize));
@@ -383,21 +382,18 @@ class Scenario {
   static MIN_SPEED = -4;
   static MAX_SPEED = 3;
   static DEFAULT_SPEED = 0;
+  // Scenario.INVALID is a little more permissive than Simulation.INVALID: it
+  // allows whitespace.
+  static INVALID = /[^FLRBPC\s]/g;
 
-  constructor(dnaTextArea, speedRange) {
+  constructor(dnaTextarea, speedRange) {
     this.params = new URLSearchParams(window.location.search);
 
-    this.dna = dnaTextArea.value;
+    this.dna = dnaTextarea.value.toUpperCase().replaceAll(Scenario.INVALID, '');
     if (this.params.has('dna')) {
-      this.dna = this.params.get('dna')
+      this.setDNA(this.params.get('dna'));
     }
-    this.dna = this.dna.toUpperCase();
-    const notAllowed = /[^FLRPBC]/g;
-    this.dna = this.dna.replace(notAllowed, '');
-    dnaTextArea.value = this.dna;
-    if (this.params.has('dna')) {
-      this.store('dna', this.dna.toLowerCase());
-    }
+    dnaTextarea.value = this.dna;
 
     this.scale = Scenario.DEFAULT_SCALE;
     if (this.params.has('scale')) {
@@ -434,35 +430,14 @@ class Scenario {
     window.history.replaceState({}, '', url);
   }
 
-  dnaInput(dnaTextArea, text) {
-    const start = dnaTextArea.selectionStart;
-    const end = dnaTextArea.selectionEnd;
-    const upper = text.toUpperCase();
-    const notAllowed = /[^FLRPBC]/g;
-    dnaTextArea.setRangeText(upper.replace(notAllowed, ''), start, end, 'end');
-    this.dna = dnaTextArea.value;
-    this.store('dna', this.dna.toLowerCase());
-  }
-
-  dnaButton(dnaTextArea, letter) {
-    const start = dnaTextArea.selectionStart;
-    const end = dnaTextArea.selectionEnd;
-    dnaTextArea.setRangeText(letter, start, end, 'end');
-    this.dna = dnaTextArea.value;
-    this.store('dna', this.dna.toLowerCase());
-  }
-
-  dnaDelete(dnaTextArea) {
-    const start = dnaTextArea.selectionStart;
-    const end = dnaTextArea.selectionEnd;
-    if (start === end) {
-      // TODO: this doesn't work at beginning, fix
-      dnaTextArea.setRangeText('', start - 1, end, 'start');
-    } else {
-      dnaTextArea.setRangeText('');
+  setDNA(dna) {
+    const valid = dna.toUpperCase().replaceAll(Scenario.INVALID, '');
+    if (this.dna === valid) {
+      return false;
     }
-    this.dna = dnaTextArea.value;
+    this.dna = valid;
     this.store('dna', this.dna.toLowerCase());
+    return true;
   }
 
   zoomIn() {
@@ -578,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const turtlesOut  = document.getElementById('turtles');
   const stepsOut    = document.getElementById('steps');
   const birthsOut   = document.getElementById('births');
-  const dnaTextArea = document.getElementById('dna');
+  const dnaTextarea = document.getElementById('dna');
   const ctrlH2      = document.getElementById('ctrl');
   const speedRange  = document.getElementById('speed');
   const restartBtn  = document.getElementById('restart');
@@ -596,7 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const biggerBtn   = document.getElementById('bigger');
   const smallerBtn  = document.getElementById('smaller');
 
-  const scenario = new Scenario(dnaTextArea, speedRange);
+  const scenario = new Scenario(dnaTextarea, speedRange);
   const sim      = new Simulation(scenario.dna, scenario.scale, seaCanvas);
   const playback = new Playback(scenario, sim);
 
@@ -649,8 +624,71 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI();
   });
 
-  // TODO: still not confident this is right
-  dnaTextArea.addEventListener('beforeinput', (e) => {
+  // We can implement deleteEdit using setRangeText, but it breaks the undo/redo
+  // stack in most browsers.
+  var deleteEdit = () => {
+    const start = dnaTextarea.selectionStart;
+    const end = dnaTextarea.selectionEnd;
+    dnaTextarea.focus();
+    if (start !== end) {
+      dnaTextarea.setRangeText('', start, end, 'start');
+    } else if (start > 0) {
+      dnaTextarea.setRangeText('', start - 1, start, 'start');
+    }
+    if (scenario.setDNA(dnaTextarea.value)) {
+      sim.resetDNA(scenario.dna);
+      updateUI();
+      playback.restart();
+    }
+  };
+  // In most browsers execCommand('deleteBackward') plays better with the
+  // undo/redo stack, so try to use that if it's still available.
+  if (document.queryCommandSupported('deleteBackward')) {
+    console.log('using execCommand(deleteBackward) for deleteEdit');
+    deleteEdit = () => {
+      dnaTextarea.focus();
+      document.execCommand('deleteBackward');
+    };
+  } else if (document.queryCommandSupported('delete')) {
+    console.log('using execCommand(delete) for deleteEdit');
+    deleteEdit = () => {
+      dnaTextarea.focus();
+      document.execCommand('delete');
+    };
+  }
+  delBtn.addEventListener('click', deleteEdit);
+
+  // We can implement insertEdit using setRangeText, but it breaks the undo/redo
+  // stack in most browsers.
+  var insertEdit = (text) => {
+    const start = dnaTextarea.selectionStart;
+    const end = dnaTextarea.selectionEnd;
+    dnaTextarea.focus();
+    dnaTextarea.setRangeText(text, start, end, 'end');
+    if (scenario.setDNA(dnaTextarea.value)) {
+      sim.resetDNA(scenario.dna);
+      updateUI();
+      playback.restart();
+    }
+  };
+  // In most browsers execCommand('insertText') plays better with the undo/redo
+  // stack, so try to use that if it's still available.
+  if (document.queryCommandSupported('insertText')) {
+    console.log('using execCommand(insertText) for insertions');
+    insertEdit = (text) => {
+      dnaTextarea.focus();
+      document.execCommand('insertText', false, text);
+    };
+  }
+  forwardBtn.addEventListener('click', () => insertEdit('F'));
+  leftBtn.addEventListener('click', () => insertEdit('L'));
+  rightBtn.addEventListener('click', () => insertEdit('R'));
+  babyBtn.addEventListener('click', () => insertEdit('B'));
+  poopBtn.addEventListener('click', () => insertEdit('P'));
+  cleanBtn.addEventListener('click', () => insertEdit('C'));
+
+  // Try to catch invalid text insertions before they happen.
+  dnaTextarea.addEventListener('beforeinput', (e) => {
     switch (e.inputType) {
     case 'insertText':
       break;
@@ -662,40 +700,35 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!e.data) {
       return;
     }
-    e.preventDefault();
-    scenario.dnaInput(dnaTextArea, e.data);
-    sim.resetDNA(scenario.dna);
-    updateUI();
-    playback.restart();
-  });
-
-  dnaTextArea.addEventListener('input', () => {
-    scenario.dna = dnaTextArea.value;
-    scenario.store('dna', scenario.dna.toLowerCase());
-    sim.resetDNA(scenario.dna);
-    updateUI();
-    playback.restart();
-  });
-
-  const dnaButton = (letter) => {
-    // TODO: move selection to end of dnaTextArea?
-    if (letter === '') {
-      scenario.dnaDelete(dnaTextArea);
-    } else {
-      scenario.dnaButton(dnaTextArea, letter);
+    const valid = e.data.toUpperCase().replaceAll(Scenario.INVALID, '');
+    if (valid === e.data) {
+      return;
     }
-    sim.resetDNA(scenario.dna);
-    updateUI();
-    playback.restart();
-    // TODO: do we need to return focus to the dnaTextArea?
-  };
-  delBtn.addEventListener('click', () => dnaButton(''));
-  forwardBtn.addEventListener('click', () => dnaButton('F'));
-  leftBtn.addEventListener('click', () => dnaButton('L'));
-  rightBtn.addEventListener('click', () => dnaButton('R'));
-  babyBtn.addEventListener('click', () => dnaButton('B'));
-  poopBtn.addEventListener('click', () => dnaButton('P'));
-  cleanBtn.addEventListener('click', () => dnaButton('C'));
+    e.preventDefault();
+    insertEdit(valid);
+  });
+
+  // Add an input handler as a fallback.  If this input handler writes to
+  // dnaTextarea.value it breaks the undo/redo history, so hopefully it never
+  // needs to.
+  dnaTextarea.addEventListener('input', () => {
+    const upper = dnaTextarea.value.toUpperCase();
+    const valid = upper.replaceAll(Scenario.INVALID, '');
+    if (valid !== dnaTextarea.value) {
+      dnaTextarea.value = valid;
+      // Do some math to figure out the correct selection range.
+      const start = dnaTextarea.selectionStart;
+      const end = dnaTextarea.selectionEnd;
+      const sd = (upper.slice(0, start).match(Scenario.INVALID) || []).length;
+      const ed = (upper.slice(0, end).match(Scenario.INVALID) || []).length;
+      dnaTextarea.setSelectionRange(start - sd, end - ed);
+    }
+    if (scenario.setDNA(dnaTextarea.value)) {
+      sim.resetDNA(scenario.dna);
+      updateUI();
+      playback.restart();
+    }
+  });
 
   biggerBtn.addEventListener('click', () => {
     if (scenario.zoomIn()) {
@@ -729,3 +762,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // FPFPLFPFPBRRRRFFLLFPFPBC
 // FCPPPFPPPCBRRRFFFPFPFPFPFPFPFPFFPRBCRRFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFRPFFFFFFFFFFFFBC
 // RPBFPRFPFFFFFFFFPFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFPBC
+// PFRBLFFFFFFFFFFFFPLLLLFFFFFFFFFFFFLCFPB
+// BFRRRBRRRBLFFFFPPFFFFPPPPCCCPFRB
+// PFPPPRPRBLLPFPFPFFPFPFFFPFPPFPRRBFCCFFFFFFFCCLLB
+// FFFFFFFFFFPPFFFFFFFFRBFBLC
+// PFPRBLLLCLLLFFBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC
+// PFPFPRPFPFPPFPPPFFFFFCFFFLFFFFFFFBFBRB
