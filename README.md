@@ -1,6 +1,8 @@
 C-TURTL
 =======
 
+Here is a small turtle graphics game I made for my kids.
+
 Move the turtle by writing instructions into its DNA.
 
 - **F**: move the turtle **forward**
@@ -13,10 +15,9 @@ Move the turtle by writing instructions into its DNA.
 The turtle dies at the end of the DNA.  Baby turtles start over at the beginning
 of the DNA.
 
-I'm not much of an artist, so the turtle looks like this: ■
-
-Here are a couple examples to inspire you:
-- [FFFLFFFBPFFFBCFFBFFB][4]
+Here are some examples:
+- [PFRBPPLFPFPPPCFPPCFPC][17]
+- [FFFLFFFBPFFFBCFFBFBFPPC][4]
 - [FPFPLFPFPBRRRRFFLLFPFPBC][9]
 - [FFFFFFFFFFPPFFFFFFFFRBFBLC][5]
 - [BFRRRBRRRBLFFFFPPFFFFPPPPCCCPFRB][13]
@@ -35,11 +36,10 @@ Here are a couple examples to inspire you:
 This was inspired by Isabel Beach's [L-systems and Turtle Graphics][1] and Susam
 Pal's [CFRS][2].
 
-Enjoy!
-
 Michael Erickson
 
-[4]: https://michae2.github.io/c-turtl/?dna=ffflfffbpfffbcffbffb&scale=7&speed=0
+[17]: https://michae2.github.io/c-turtl/?dna=pfrbpplfpfpppcfppcfpc&scale=4&speed=-2
+[4]: https://michae2.github.io/c-turtl/?dna=ffflfffbpfffbcffbfbfppc&scale=7&speed=0
 [9]: https://michae2.github.io/c-turtl/?dna=fpfplfpfpbrrrrffllfpfpbc&scale=5&speed=-1
 [5]: https://michae2.github.io/c-turtl/?dna=ffffffffffppffffffffrbfblc&scale=7&speed=1
 [13]: https://michae2.github.io/c-turtl/?dna=bfrrrbrrrblffffppffffppppcccpfrb&scale=6&speed=0
