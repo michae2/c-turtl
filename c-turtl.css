@@ -79,7 +79,7 @@ output {
   font-family: monospace;
   padding: 1vmin;
   background: black;
-  color: white
+  color: white;
 }
 
 textarea {
