@@ -39,8 +39,10 @@ section {
   grid-column: span 9;
   grid-row: span 9;
   display: grid;
+  /*
   grid-template-columns: repeat(auto-fill, 64px);
   grid-template-rows: repeat(auto-fill, 64px);
+ */
   overflow: auto;
   background: lightgray;
 }
