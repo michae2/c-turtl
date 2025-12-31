@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Copyright (c) 2025 Michael Erickson.  All rights reserved. -->
   <title>C-TURTL</title>
   <link rel="stylesheet" href="c-turtl.css">
 </head>
@@ -11,7 +12,7 @@
     <h1>C-TURTL</h1>
     <div id="appgrid">
       <section id="section-big">
-        <h2 style="display: none;">SEA</h2>
+        <h2 style="display: none">SEA</h2>
         <canvas id="sea" aria-label="Simulation of turtles moving around"></canvas>
       </section>
       <section>
@@ -32,7 +33,7 @@
       </section>
       <section>
         <h2 id="ctrl">CTRL</h2>
-        <label for="speed" style="display: none;">Speed</label>
+        <label for="speed" style="display: none">Speed</label>
         <input id="speed" name="speed" type="range" min="-4" max="3" value="0" list="speed-marks">
         <datalist id="speed-marks">
           <option value="-4" label="0"></option>
@@ -56,22 +57,22 @@
         <button id="delete" type="button" title="Delete" aria-label="Delete">
           <span aria-hidden="true">&#x2421;</span>
         </button>
-        <button id="forward" type="button" title="Forward" aria-label="F" style="color: #66cc66;">
+        <button id="forward" type="button" title="Forward" aria-label="F" style="color: #66cc66">
           <span aria-hidden="true">F</span>
         </button>
-        <button id="left" type="button" title="Turn left" aria-label="L" style="color: #66cc66;">
+        <button id="left" type="button" title="Turn left" aria-label="L" style="color: #66cc66">
           <span aria-hidden="true">L</span>
         </button>
-        <button id="right" type="button" title="Turn right" aria-label="R" style="color: #66cc66;">
+        <button id="right" type="button" title="Turn right" aria-label="R" style="color: #66cc66">
           <span aria-hidden="true">R</span>
         </button>
-        <button id="baby" type="button" title="Baby" aria-label="B" style="color: #9966cc;">
+        <button id="baby" type="button" title="Baby" aria-label="B" style="color: #9966cc">
           <span aria-hidden="true">B</span>
         </button>
-        <button id="poop" type="button" title="Poop" aria-label="P" style="color: #cc9966;">
+        <button id="poop" type="button" title="Poop" aria-label="P" style="color: #cc9966">
           <span aria-hidden="true">P</span>
         </button>
-        <button id="clean" type="button" title="Clean" aria-label="C" style="color: #6699cc;">
+        <button id="clean" type="button" title="Clean" aria-label="C" style="color: #6699cc">
           <span aria-hidden="true">C</span>
         </button>
         <button id="bigger" type="button" title="Zoom in" aria-label="Zoom in">
@@ -83,29 +84,23 @@
       </section>
     </div>
     <article>
-      <h2>ABOUT</h2>
-      <p>Here is a little game I made for my kids, inspired by Isabel Beach's
-        <a href="https://ibeach.github.io/turtle/">L-systems and
-          Turtle Graphics</a> and Susam Pal's <a href="https://susam.net/cfrs.html">CFRS[]</a>. I call it <em>C-TURTL</em>. In this game you write the
-        DNA for your turtle and then see what happens. The DNA consists of six
-        different letters, which are each an instruction for the turtle:</p>
+      <h2>README</h2>
+      <p>Move the turtle by writing instructions into its DNA.</p>
       <ul>
-        <li><strong style="color: #66cc66;">F</strong>: move the turtle <strong>forward</strong></li>
-        <li><strong style="color: #66cc66;">L</strong>: rotate the turtle 45° <strong>left</strong>
-          (counter-clockwise)</li>
-        <li><strong style="color: #66cc66;">R</strong>: rotate the turtle 45° <strong>right</strong>
-          (clockwise)</li>
-        <li><strong style="color: #9966cc;">B</strong>: make a <strong>baby</strong></li>
-        <li><strong style="color: #cc9966;">P</strong>: <strong>poop</strong></li>
-        <li><strong style="color: #6699cc;">C</strong>: <strong>clean</strong> up the poop</li>
+        <li><strong style="color: #66cc66">F</strong>: move the turtle <strong>forward</strong></li>
+        <li><strong style="color: #66cc66">L</strong>: rotate the turtle 45° <strong>left</strong> (counter-clockwise)</li>
+        <li><strong style="color: #66cc66">R</strong>: rotate the turtle 45° <strong>right</strong> (clockwise)</li>
+        <li><strong style="color: #9966cc">B</strong>: make a <strong>baby</strong> turtle</li>
+        <li><strong style="color: #cc9966">P</strong>: <strong>poop</strong></li>
+        <li><strong style="color: #6699cc">C</strong>: <strong>clean</strong> up the poop</li>
       </ul>
-      <p>Each turtle follows the instructions in the DNA, performing one
-        instruction at a time.  Baby turtles start at the beginning of the DNA.
-        When a turtle finishes all of the instructions in the DNA, it dies.  The
-        game always starts with one turtle in the middle of the sea, facing
-        east.</p>
-      <p>I’m not much of an artist, so the turtles look like this: <span style="color: #66cc66;">&#x25A0;</span></p>
-      <p>Michael Erickson</p>
+      <p>The turtle dies at the end of the DNA.  Baby turtles start over at the beginning of the DNA.<p>
+      <p>I'm not much of an artist, so the turtle looks like this: <span style="color: #66cc66">&#x25A0;</span></p>
+      <p>Inspired by Isabel Beach's <a href="https://ibeach.github.io/turtle/">L-systems and Turtle Graphics</a> and Susam Pal's <a href="https://susam.net/cfrs.html">CFRS[]</a>. Source is on <a href="https://github.com/michae2/c-turtl">GitHub</a>.</p>
+      <footer>
+        <p>
+        <small>&copy; 2025 Michael Erickson</small>
+      </footer>
     </article>
   </main>
   <script src="c-turtl.js" defer></script>

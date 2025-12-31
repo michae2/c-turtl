@@ -1,3 +1,5 @@
+/* Copyright (c) 2025 Michael Erickson.  All rights reserved. */
+
 body {
   margin: 1vmin;
 }
@@ -115,6 +117,7 @@ button span {
 article {
   width: 98vmin;
   margin-top: 1vmin;
+  font-size: 3vmin;
 }
 
 ul {

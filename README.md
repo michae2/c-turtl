@@ -1,29 +1,22 @@
 C-TURTL
 =======
 
-Here is a little game I made for my kids, inspired by [Isabel Beach's L-systems
-and Turtle Graphics][1] and [Susam Pal's CFRS\[\]][2]. I call it _C-TURTL_. In
-this game you write the DNA for your turtle and then see what happens. The DNA
-consists of six different letters, which are each an instruction for the turtle:
+Move the turtle by writing instructions into its DNA.
 
-1. **F**: move the turtle **forward** one space.
-2. **L**: rotate the turtle 45° **left** (counter-clockwise) in place.
-3. **R**: rotate the turtle 45° **right** (clockwise) in place.
-4. **B**: make a **baby** turtle.
-5. **P**: **poop**.
-6. **C**: **clean** up poop.
+- **F**: move the turtle **forward**
+- **L**: rotate the turtle 45° **left** (counter-clockwise)
+- **R**: rotate the turtle 45° **right** (clockwise)
+- **B**: make a **baby** turtle
+- **P**: **poop**
+- **C**: **clean** up the poop
 
-Each turtle follows the instructions in the DNA, performing one instruction at a
-time. Baby turtles start at the beginning of the DNA. When a turtle finishes all
-of the instructions in the DNA, it dies. The game always starts with one baby
-turtle in the middle of the ocean, facing east (right).
+The turtle dies at the end of the DNA.  Baby turtles start over at the beginning
+of the DNA.
 
-I'm not much of an artist, so the turtles look like this:
+I'm not much of an artist, so the turtle looks like this: ■
 
-    +------+
-    |      |
-    |      |
-    +------+
+Inspired by Isabel Beach's [L-systems and Turtle Graphics][1] and Susam Pal's
+[CFRS\[\]][2].
 
 Enjoy!
 
