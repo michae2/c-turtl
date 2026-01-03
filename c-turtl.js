@@ -383,7 +383,7 @@ class Scenario {
   // allows whitespace.
   static INVALID = /[^FLRBPC\s]/g;
 
-  constructor(dnaTextarea, speedRange) {
+  constructor(dnaTextarea, speedRange, loopBox) {
     this.params = new URLSearchParams(window.location.search);
 
     this.dna = dnaTextarea.value.toUpperCase().replaceAll(Scenario.INVALID, '');
@@ -402,15 +402,21 @@ class Scenario {
       this.store('scale', this.scale.toString());
     }
 
+    this.pause = false;
+    if (this.params.has('pause')) {
+      this.setPause(this.params.get('pause') === '1');
+    }
+
     this.speed = parseInt(speedRange.value);
     if (this.params.has('speed')) {
       this.setSpeed(this.params.get('speed'));
       speedRange.value = this.speed.toString();
     }
 
-    this.pause = false;
-    if (this.params.has('pause')) {
-      this.playPause(this.params.get('pause') === '1');
+    this.loop = false;
+    if (this.params.has('loop')) {
+      this.setLoop(this.params.get('loop') === '1');
+      loopBox.checked = this.loop;
     }
   }
 
@@ -462,11 +468,19 @@ class Scenario {
       this.speed = Math.min(Scenario.MAX_SPEED, this.speed);
     }
     this.store('speed', this.speed.toString());
+    if (this.speed <= Scenario.MIN_SPEED) {
+      this.setPause(true);
+    }
   }
 
-  playPause(pause) {
+  setPause(pause) {
     this.pause = pause;
     this.store('pause', this.pause ? '1' : '0');
+  }
+
+  setLoop(loop) {
+    this.loop = loop;
+    this.store('loop', this.loop ? '1' : '0');
   }
 }
 
@@ -504,11 +518,30 @@ class Playback {
   // animate is the animation loop, or game loop.  It is scheduled once per
   // frame while playback is running.
   animate(curTime, prevTime) {
-    if (this.scenario.pause || this.sim.turtles < 1) {
+    if (this.scenario.pause || (this.sim.turtles < 1 && !this.scenario.loop)) {
+      // Simulation is either paused or finished, so stop the animation.
       this.running = false;
+      if (this.scenario.speed <= Scenario.MIN_SPEED) {
+        // If we're in the debugging mode, need to set paused (see below).
+        this.scenario.setPause(true);
+      }
+      this.updateUI();
+      return;
+    } else if (this.sim.turtles < 1 && this.scenario.loop) {
+      // The simulation is finished but we're looping again, so spend one frame
+      // in the reset state before continuing.
+      this.sim.reset();
+      if (this.scenario.speed <= Scenario.MIN_SPEED) {
+        // If we're in the debugging mode, need to set paused (see below).
+        this.running = false;
+        this.scenario.setPause(true);
+      } else {
+        requestAnimationFrame(time => this.animate(time, curTime));
+      }
       this.updateUI();
       return;
     }
+
     let elapsed = Math.max(0, curTime - prevTime);
     this.accumulator += elapsed;
     // Discover the frameMS for this system.
@@ -519,7 +552,7 @@ class Playback {
     if (this.scenario.speed <= Scenario.MIN_SPEED) {
       this.sim.step();
       this.running = false;
-      this.scenario.playPause(true);
+      this.scenario.setPause(true);
       this.updateUI();
       return;
     }
@@ -529,7 +562,7 @@ class Playback {
 
     const budget = Math.max(this.frameMS - Playback.BUDGET_OVERHEAD_MS, 0);
     const loopStart = performance.now();
-    while (this.accumulator >= stepMS) {
+    while (this.accumulator >= stepMS && this.sim.turtles >= 1) {
       this.sim.step();
       this.accumulator -= stepMS;
       // Bound the amount of work we do in case there was a long delay between
@@ -553,6 +586,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const dnaTextarea = document.getElementById('dna');
   const ctrlH2      = document.getElementById('ctrl');
   const speedRange  = document.getElementById('speed');
+  const loop        = document.getElementById('loop');
+  const loopBox     = document.getElementById('loopbox');
   const restartBtn  = document.getElementById('restart');
   const pauseBtn    = document.getElementById('pause');
   const pauseSpan   = pauseBtn.querySelector('span');
@@ -568,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const biggerBtn   = document.getElementById('bigger');
   const smallerBtn  = document.getElementById('smaller');
 
-  const scenario = new Scenario(dnaTextarea, speedRange);
+  const scenario = new Scenario(dnaTextarea, speedRange, loopBox);
   const sim      = new Simulation(scenario.dna, scenario.scale, seaCanvas);
   const playback = new Playback(scenario, sim);
 
@@ -580,6 +615,15 @@ document.addEventListener('DOMContentLoaded', () => {
     stepsOut.value = sim.steps;
     birthsOut.value = sim.births;
     pauseSpan.textContent = scenario.pause ? '\u25B6\uFE0E' : '\u23F8\uFE0E';
+    if (scenario.speed <= Scenario.MIN_SPEED) {
+      pauseBtn.title = 'Step';
+      pauseBtn.style.color = 'red';
+      speedModal.style.color = 'red';
+    } else {
+      pauseBtn.title = scenario.pause ? 'Play' : 'Pause';
+      pauseBtn.style.color = 'black';
+      speedModal.style.color = 'black';
+    }
     speedSpan.textContent = speeds[scenario.speed - Scenario.MIN_SPEED];
     if (!playback.running && scenario.dna === '') {
       h1.style.zIndex = 2;
@@ -598,7 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   pauseBtn.addEventListener('click', () => {
-    scenario.playPause(!scenario.pause);
+    scenario.setPause(!scenario.pause);
     updateUI();
     playback.restart();
   });
@@ -606,18 +650,31 @@ document.addEventListener('DOMContentLoaded', () => {
   let speedMode = false;
   speedModal.addEventListener('click', () => {
     if (speedMode) {
-      ctrlH2.style.display = 'inline-grid';
+      ctrlH2.style.display = 'block';
       speedRange.style.display = 'none';
+      loop.style.display = 'none';
+      forwardBtn.style.display = 'inline-block';
+      leftBtn.style.display = 'inline-block';
+      speedModal.classList.remove('modal');
       speedMode = false;
     } else {
       ctrlH2.style.display = 'none';
-      speedRange.style.display = 'inline-grid';
+      speedRange.style.display = 'inline-block';
+      loop.style.display = 'flex';
+      forwardBtn.style.display = 'none';
+      leftBtn.style.display = 'none';
+      speedModal.classList.add('modal');
       speedMode = true;
     }
   });
 
   speedRange.addEventListener('input', () => {
     scenario.setSpeed(speedRange.value);
+    updateUI();
+  });
+
+  loopBox.addEventListener('change', () => {
+    scenario.setLoop(loopBox.checked);
     updateUI();
   });
 

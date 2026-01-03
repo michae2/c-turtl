@@ -36,6 +36,11 @@ Here are some examples:
 This was inspired by Isabel Beach's [L-systems and Turtle Graphics][1] and Susam
 Pal's [CFRS][2].
 
+
+Thanks to:
+- Matilda for the Clean instruction
+- Vaelatern for the loop option
+
 Michael Erickson
 
 [17]: https://michae2.github.io/c-turtl/?dna=pfrbpplfpfpppcfppcfpc&scale=4&speed=-2

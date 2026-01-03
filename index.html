@@ -30,7 +30,6 @@
         <textarea id="dna" title="Turtle DNA" contenteditable
                   autocapitalize="characters" autocomplete="off"
                   autocorrect="off" inputmode="none"
-                  placeholder="PFRBPPLFPFPPPCFPPCFPC"
                   spellcheck="false"></textarea>
       </section>
       <section>
@@ -59,6 +58,10 @@
         <button id="delete" type="button" title="Delete" aria-label="Delete">
           <span aria-hidden="true">&#x232B;</span>
         </button>
+        <label id="loop" title="Loop" style="display: none">
+          <input type="checkbox" id="loopbox">
+          loop
+        </label>
         <button id="forward" type="button" title="Forward" aria-label="F" style="color: #66cc66">
           <span aria-hidden="true">F</span>
         </button>

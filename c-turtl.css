@@ -109,7 +109,6 @@ button {
   border: 1px solid gray;
   touch-action: manipulation;
   cursor: pointer;
-  user-select: none;
 }
 
 button:hover {
@@ -118,6 +117,18 @@ button:hover {
 
 button:active {
   background-color: #aaaaaa;
+}
+
+.modal {
+  background-color: #aaaaaa;
+}
+
+.modal:hover {
+  background-color: #999999;
+}
+
+.modal:active {
+  background-color: #888888;
 }
 
 button:disabled {
@@ -135,12 +146,31 @@ button span {
   display: none;
 }
 
-#scale {
-  grid-column: span 4;
+#loop {
+  grid-column: span 2;
   grid-row: span 1;
   display: none;
+  overflow: hidden;
+  font-size: 3vmin;
+  font-style: italic;
+  user-select: none;
+  color: black;
+  border-radius: 4px;
+  background-color: #f0f0f0;
+  border: 1px solid gray;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  cursor: pointer;
 }
 
+#loop:hover {
+  background-color: #dddddd;
+}
+
+#loop:active {
+  background-color: #aaaaaa;
+}
 article {
   width: 98vmin;
   margin-top: 1vmin;
