@@ -34,7 +34,7 @@ Here are some examples:
 - [FCPPPFPPPCBRRRFFFPFPFPFPFPFPFPFFPRBCRRFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFRPFFFFFFFFFFFFBC][10]
 
 This was inspired by Isabel Beach's [L-systems and Turtle Graphics][1] and Susam
-Pal's [CFRS][2].
+Pal's [CFRS[]][2].
 
 
 Thanks to:
