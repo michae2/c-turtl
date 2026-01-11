@@ -29,9 +29,11 @@ Here are some examples:
 - [RPBFPRFPFFFFFFFFPFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFPBC][11]
 - [CFFFFFFFFFFFFFFPFPFPRRFPRRFPFPFFFFFFFFPFPFPLLFPLLFPFPBLLB][3]
 - [PFPRBLLLCLLLFFBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC][15]
-- [PFPPFPPPRRFPPPPFPPPPPFFFFFFFFFFFFFFFFFFFFFFFCFCFBFFFFFFFFFFFFFFFFFFFFFFCFFB][17]
+- [PFPPFPPPRRFPPPPFPPPPPFFFFFFFFFFFFFFFFFFFFFFFCFCFBFFFFFFFFFFFFFFFFFFFFFFCFFB][18]
 - [FPPFPFPRRFPFPFPFPLLFPFPFPFPCLLFPFPCCCPFPFPFPRRBLCLLLBRPPPFPPFPPFPPFPPPFPPPFPPPFPPPFPPPFPFFPFCCCRCCCFFPFPFPPFPFPFPFPRRBCC][7]
 - [FCPPPFPPPCBRRRFFFPFPFPFPFPFPFPFFPRBCRRFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFRPFFFFFFFFFFFFBC][10]
+
+For more examples, or to share your own creations, please see [discussions][19].
 
 This was inspired by Isabel Beach's [L-systems and Turtle Graphics][1] and Susam
 Pal's [CFRS[]][2].
@@ -56,8 +58,9 @@ Michael Erickson
 [11]: https://michae2.github.io/c-turtl/?dna=rpbfprfpffffffffpffffffffffffffffffffffffffffffpbc&scale=7&speed=0
 [3]: https://michae2.github.io/c-turtl/?dna=cffffffffffffffpfpfprrfprrfpfpffffffffpfpfpllfpllfpfpbllb&scale=5&speed=0
 [15]: https://michae2.github.io/c-turtl/?dna=pfprblllclllffbffffffffffffffffffffffffffffffffffffffffffffffffffffffc&scale=8&speed=1
-[17]: https://michae2.github.io/c-turtl/?dna=pfppfppprrfppppfpppppfffffffffffffffffffffffcfcfbffffffffffffffffffffffcffb&scale=4&speed=-2
+[18]: https://michae2.github.io/c-turtl/?dna=pfppfppprrfppppfpppppfffffffffffffffffffffffcfcfbffffffffffffffffffffffcffb&scale=4&speed=-2
 [7]: https://michae2.github.io/c-turtl/?dna=fppfpfprrfpfpfpfpllfpfpfpfpcllfpfpcccpfpfpfprrblclllbrpppfppfppfppfpppfpppfpppfpppfpppfpffpfcccrcccffpfpfppfpfpfpfprrbcc&scale=5&speed=0
 [10]: https://michae2.github.io/c-turtl/?dna=fcpppfpppcbrrrfffpfpfpfpfpfpfpffprbcrrffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffrpffffffffffffbc&scale=10&speed=2
+[19]: https://github.com/michae2/c-turtl/discussions/categories/show-and-tell
 [1]: https://ibeach.github.io/turtle/
 [2]: https://susam.net/cfrs.html
